@@ -14,7 +14,7 @@
   "imports": {
     "$apifly": "./source/mod.ts",
     "$types": "./source/types.ts",
-    "@vseplet/fetchify": "jsr:@vseplet/fetchify@^0.3.17",
+    "@vseplet/fetchify": "jsr:@vseplet/fetchify@0.3.19",
     "@hono/hono": "jsr:@hono/hono@^4.5.0"
   },
   "tasks": {
