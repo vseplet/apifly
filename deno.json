@@ -1,7 +1,7 @@
 {
   "lock": false,
   "name": "@vseplet/apifly",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "workflows": {
     "UpdateSemverDeployJsr": {
       "versionsFilePath": "./source/versions.ts"
