@@ -1,24 +1,6 @@
 // deno-lint-ignore-file no-unused-vars require-await
-type RecursiveGuards<T> = {
-  [K in keyof T]?: T[K] extends object ? RecursiveGuards<T[K]>
-    : (
-      state: typeof StateDefinition,
-      value: T[K],
-      update: T[K],
-    ) => boolean;
-};
 
-type RecursiveHandlers<T> = {
-  [K in keyof T]?: T[K] extends object ? RecursiveHandlers<T[K]>
-    : (
-      state: typeof StateDefinition,
-    ) => Promise<void>;
-};
-
-type StateUpdate<T> = {
-  [K in keyof T]?: T[K] extends object ? StateUpdate<T[K]>
-    : T[K];
-};
+import type { ApiflyGuards, ApiflyPatch, ApiflyWatchers } from "$types";
 
 // definition
 const string = (v: string) => v;
@@ -35,7 +17,7 @@ const StateDefinition = {
 };
 
 // backend
-const guards: RecursiveGuards<typeof StateDefinition> = {
+const guards: ApiflyGuards<typeof StateDefinition> = {
   "a": {
     "b": (state, value, update) => update === "1",
     "c": {
@@ -44,7 +26,7 @@ const guards: RecursiveGuards<typeof StateDefinition> = {
   },
 };
 
-const handlers: RecursiveHandlers<typeof StateDefinition> = {
+const handlers: ApiflyWatchers<typeof StateDefinition> = {
   "a": {
     "b": async (state: typeof StateDefinition) => {},
     "c": {
@@ -54,10 +36,10 @@ const handlers: RecursiveHandlers<typeof StateDefinition> = {
 };
 
 const update = async (
-  guards: RecursiveGuards<typeof StateDefinition>,
-  handlers: RecursiveHandlers<typeof StateDefinition>,
+  guards: ApiflyGuards<typeof StateDefinition>,
+  handlers: ApiflyWatchers<typeof StateDefinition>,
   state: typeof StateDefinition,
-  update: Partial<StateUpdate<typeof StateDefinition>>,
+  update: Partial<ApiflyPatch<typeof StateDefinition>>,
 ) => {
   return state;
 };
@@ -68,7 +50,7 @@ const get = async (): Promise<Partial<typeof StateDefinition>> => {
 };
 
 const put = async (
-  state: Partial<StateUpdate<typeof StateDefinition>>,
+  state: Partial<ApiflyPatch<typeof StateDefinition>>,
 ): Promise<void> => {
   return;
 };
