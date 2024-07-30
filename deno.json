@@ -9,15 +9,23 @@
   },
   "exports": {
     ".": "./source/mod.ts",
+    "./server": "./source/ApiflyServer.ts",
+    "./client": "./source/ApiflyClient.ts",
     "./types": "./source/types.ts"
   },
   "imports": {
     "$apifly": "./source/mod.ts",
     "$types": "./source/types.ts",
-    "@vseplet/fetchify": "jsr:@vseplet/fetchify@0.3.19",
-    "@hono/hono": "jsr:@hono/hono@^4.5.0"
+    "@hono/hono": "jsr:@hono/hono@4.5.0",
+    "@valibot/valibot": "jsr:@valibot/valibot@0.36.0",
+    "@vseplet/fetchify": "jsr:@vseplet/fetchify@0.3.19"
   },
   "tasks": {
     "pub-dry": "deno publish --dry-run --allow-slow-types"
+  },
+  "fmt": {
+    "exclude": [
+      "./source/versions.ts"
+    ]
   }
 }

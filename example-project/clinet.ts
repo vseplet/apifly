@@ -1,7 +1,7 @@
-import { ApiflyClient } from "$apifly";
-import { InitialState } from "./InitialState.ts";
+import apifly from "$apifly";
+import { definition } from "./definition.ts";
 
-const client = new ApiflyClient(InitialState);
+const client = new apifly.client(definition);
 
 await client.get();
-await client.patch({ "a": { "b": "1" } });
+await client.patch({ a: { b: "Hello!" } });
