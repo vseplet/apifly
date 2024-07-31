@@ -29,9 +29,9 @@ export type ApiflyStatePart<T> = {
 };
 
 export type ApiflyDefinition<
-  T,
+  S,
 > = {
-  state: T;
+  state: S;
 };
 
 export type ApiflyRequest<T> = {

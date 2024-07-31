@@ -6,7 +6,7 @@ import type {
   ApiflyWatchers,
 } from "$types";
 
-export class ApiflyServer<T, D extends ApiflyDefinition<T>> {
+export class ApiflyServer<S, D extends ApiflyDefinition<S>> {
   constructor(private definition: D) {
   }
 
@@ -23,8 +23,8 @@ export class ApiflyServer<T, D extends ApiflyDefinition<T>> {
   }
 
   async handleRequest(
-    req: ApiflyRequest<D["state"]>,
-  ): Promise<ApiflyResponse<T>> {
+    req: ApiflyRequest<S>,
+  ): Promise<ApiflyResponse<S>> {
     throw new Error("Not implemented");
   }
 }
