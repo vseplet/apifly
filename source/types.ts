@@ -28,10 +28,35 @@ export type ApiflyStatePart<T> = {
     : T[K];
 };
 
+type ApiflyRpcDefinition<A extends any[], B> = {
+  args: A;
+  returns: B;
+};
+
+export type ApiflyRpcListDefinition = {
+  [key: string]: ApiflyRpcDefinition<any, any>;
+};
+
+export type InferRpcArgs<T> = T extends ApiflyRpcDefinition<infer A, any> ? A
+  : never;
+
+export type InferRpcReturns<T> = T extends ApiflyRpcDefinition<any, infer B> ? B
+  : never;
+
+export type InferRpcListArgs<T extends ApiflyRpcListDefinition> = {
+  [K in keyof T]: InferRpcArgs<T[K]>;
+};
+
+export type InferRpcListReturns<T extends ApiflyRpcListDefinition> = {
+  [K in keyof T]: InferRpcReturns<T[K]>;
+};
+
 export type ApiflyDefinition<
   S,
+  R extends ApiflyRpcListDefinition,
 > = {
   state: S;
+  rpc: R;
 };
 
 export type ApiflyRequest<T> = {
@@ -44,8 +69,9 @@ export type ApiflyRequest<T> = {
 
 export type ApiflyResponse<T> = {
   state: ApiflyStatePart<T>;
+  stateHash?: string;
+  error: string | null;
   returns?: {
     [key: string]: any;
   };
-  error: string | null;
 };

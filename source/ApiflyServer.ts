@@ -3,10 +3,15 @@ import type {
   ApiflyGuards,
   ApiflyRequest,
   ApiflyResponse,
+  ApiflyRpcListDefinition,
   ApiflyWatchers,
 } from "$types";
 
-export class ApiflyServer<S, D extends ApiflyDefinition<S>> {
+export class ApiflyServer<
+  S,
+  R extends ApiflyRpcListDefinition,
+  D extends ApiflyDefinition<S, R>,
+> {
   constructor(private definition: D) {
   }
 

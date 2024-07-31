@@ -6,11 +6,19 @@ import { ApiflyServer } from "./ApiflyServer.ts";
 export { ApiflyClient, ApiflyServer };
 export const apiflyDefine = <
   S,
+  R extends {
+    [key: string]: {
+      args: any[];
+      returns: any;
+    };
+  },
 >(
   state: S,
-): ApiflyDefinition<S> => {
+  rpc: R,
+): ApiflyDefinition<S, R> => {
   return {
     state,
+    rpc: rpc,
   };
 };
 
