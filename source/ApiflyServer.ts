@@ -3,16 +3,13 @@ import type {
   ApiflyGuards,
   ApiflyRequest,
   ApiflyResponse,
-  ApiflyRpcListDefinition,
   ApiflyWatchers,
 } from "$types";
 
 export class ApiflyServer<
-  S,
-  R extends ApiflyRpcListDefinition,
-  D extends ApiflyDefinition<S, R>,
+  D extends ApiflyDefinition<any, any>,
 > {
-  constructor(private definition: D) {
+  constructor() {
   }
 
   guards(guards: ApiflyGuards<D["state"]>) {
@@ -23,13 +20,18 @@ export class ApiflyServer<
     return this;
   }
 
-  procedures(procedures: { [name: string]: (...args: any[]) => Promise<any> }) {
+  procedure<N extends keyof D["rpc"]>(
+    name: N,
+    handler: (
+      args: D["rpc"][N]["args"],
+    ) => Promise<D["rpc"][N]["returns"]>,
+  ) {
     return this;
   }
 
   async handleRequest(
-    req: ApiflyRequest<S>,
-  ): Promise<ApiflyResponse<S>> {
+    req: ApiflyRequest<D["state"]>,
+  ): Promise<ApiflyResponse<D["state"]>> {
     throw new Error("Not implemented");
   }
 }

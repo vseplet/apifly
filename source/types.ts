@@ -28,6 +28,9 @@ export type ApiflyStatePart<T> = {
     : T[K];
 };
 
+export type InferStateType<T> = T extends ApiflyDefinition<infer A, any> ? A
+  : never;
+
 type ApiflyRpcDefinition<A extends any[], B> = {
   args: A;
   returns: B;

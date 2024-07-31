@@ -1,9 +1,9 @@
 // deno-lint-ignore-file require-await
 import apifly from "$apifly";
-import { definition } from "./definition.ts";
+import type { MyApiflyDefinition } from "./definition.ts";
 import { Hono } from "@hono/hono";
 
-const server = new apifly.server(definition)
+const server = new apifly.server<MyApiflyDefinition>()
   .guards({
     "a": {
       "b": (state, value, patch) => patch === "1",
@@ -20,13 +20,14 @@ const server = new apifly.server(definition)
       },
     },
   })
-  .procedures({
-    "hello": async () => {
-      return "Hello, world!";
-    },
-    "random": async () => {
-      return Math.random();
-    },
+  .procedure("hi", async (args) => {
+    return "Hello, World";
+  })
+  .procedure("hi2", async (args) => {
+    return false;
+  })
+  .procedure("hi3", async (args) => {
+    return [0, 0, 0];
   });
 
 const app = new Hono();

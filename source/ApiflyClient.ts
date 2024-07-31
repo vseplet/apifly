@@ -1,38 +1,35 @@
-// deno-lint-ignore-file require-await
+// deno-lint-ignore-file require-await no-explicit-any
 import type {
   ApiflyDefinition,
   ApiflyPatch,
   ApiflyResponse,
-  ApiflyRpcListDefinition,
   InferRpcListArgs,
   InferRpcListReturns,
+  InferStateType,
 } from "$types";
 import fetchify from "@vseplet/fetchify";
 import type { Fetchify } from "@vseplet/fetchify/Fetchify";
 import type { IFetchifyConfig } from "@vseplet/fetchify/types";
 
 export class ApiflyClient<
-  T,
-  R extends ApiflyRpcListDefinition,
-  D extends ApiflyDefinition<T, R>,
+  D extends ApiflyDefinition<any, any>,
 > {
   private fetchify: Fetchify;
 
   constructor(
-    private definition: D,
     fetchifyConfig?: IFetchifyConfig,
   ) {
     this.fetchify = fetchify.create(fetchifyConfig);
   }
 
-  async get(): Promise<ApiflyResponse<T>> {
+  async get(): Promise<ApiflyResponse<InferStateType<D>>> {
     throw new Error("Not implemented");
     // this.fetchify.get("/state");
   }
 
   async patch(
-    patch: ApiflyPatch<T>,
-  ): Promise<ApiflyResponse<T>> {
+    patch: ApiflyPatch<InferStateType<D>>,
+  ): Promise<ApiflyResponse<InferStateType<D>>> {
     throw new Error("Not implemented");
     // this.fetchify.patch("/state", patch);
   }

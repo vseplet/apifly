@@ -1,23 +1,31 @@
 import apifly from "$apifly";
+import type { ApiflyDefinition } from "$types";
 
-export const definition = apifly.define({
-  "a": {
-    "b": "hello",
-    "c": {
-      "d": true,
-    },
-  },
-}, {
-  "hi": {
-    "args": ["string", 100] as [string, number],
-    "returns": "string",
-  },
-  "hi2": {
-    "args": [20] as [number],
-    "returns": true,
-  },
-  "hi3": {
-    "args": [20, true, "hello"] as [number, boolean, string],
-    "returns": [100, 200, 300] as [number, number, number],
-  },
-});
+type StateDefinition = {
+  a: {
+    b: string;
+    c: {
+      d: boolean;
+    };
+  };
+};
+
+type RpcDefinition = {
+  hi: {
+    args: [string, number];
+    returns: string;
+  };
+  hi2: {
+    args: [number];
+    returns: boolean;
+  };
+  hi3: {
+    args: [number, boolean, string];
+    returns: [number, number, number];
+  };
+};
+
+export type MyApiflyDefinition = ApiflyDefinition<
+  StateDefinition,
+  RpcDefinition
+>;
