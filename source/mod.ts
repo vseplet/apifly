@@ -20,6 +20,7 @@ export const apiflyDefine = <
   return {
     state,
     rpc: rpc,
+    extra: {},
   };
 };
 
