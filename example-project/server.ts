@@ -1,6 +1,6 @@
 // deno-lint-ignore-file require-await
 import apifly from "$apifly";
-import type { MyApiflyDefinition } from "./definition.ts";
+import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 import { Hono } from "@hono/hono";
 
 const server = new apifly.server<MyApiflyDefinition>()

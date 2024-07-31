@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-unused-vars
 import apifly from "$apifly";
-import type { MyApiflyDefinition } from "./definition.ts";
+import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 
 const client = new apifly.client<MyApiflyDefinition>();
 
