@@ -22,16 +22,27 @@ export class ApiflyClient<
     this.fetchify = fetchify.create(fetchifyConfig);
   }
 
+  // @ts-ignore
   async get(): Promise<ApiflyResponse<InferStateType<D>>> {
-    throw new Error("Not implemented");
-    // this.fetchify.get("/state");
+    // @ts-ignore
+    return await this.fetchify.post("", {
+      body: JSON.stringify({
+        type: "get",
+      }),
+    });
   }
 
   async patch(
     patch: ApiflyPatch<InferStateType<D>>,
+    // @ts-ignore
   ): Promise<ApiflyResponse<InferStateType<D>>> {
-    throw new Error("Not implemented");
-    // this.fetchify.patch("/state", patch);
+    // @ts-ignore
+    return await this.fetchify.post("", {
+      body: JSON.stringify({
+        type: "patch",
+        patch,
+      }),
+    });
   }
 
   async call<N extends keyof D["rpc"]>(
@@ -39,7 +50,7 @@ export class ApiflyClient<
     args: InferRpcListArgs<D["rpc"]>[N], // Выводим тип аргументов
   ): Promise<InferRpcListReturns<D["rpc"]>[N]> { // Выводим тип возвращаемого значения
     throw new Error("Not implemented");
-    // this.fetchify.post("/call");
+    this.fetchify.post("/call");
   }
 
   // async call<N extends keyof D["procedures"]>(

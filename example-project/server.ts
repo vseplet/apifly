@@ -3,7 +3,17 @@ import apifly from "$apifly";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 import { Hono } from "@hono/hono";
 
-const server = new apifly.server<MyApiflyDefinition>()
+const apiflyServer = new apifly.server<MyApiflyDefinition>()
+  .load(async () => {
+    return {
+      a: {
+        b: "1",
+        c: {
+          d: true,
+        },
+      },
+    };
+  })
   .guards({
     "a": {
       "b": (state, value, patch) => patch === "1",
@@ -11,6 +21,9 @@ const server = new apifly.server<MyApiflyDefinition>()
         "d": (state, value, patch) => patch === true,
       },
     },
+  })
+  .store(async (state) => {
+    console.log(state);
   })
   .watchers({
     "a": {
@@ -30,11 +43,11 @@ const server = new apifly.server<MyApiflyDefinition>()
     return [0, 0, 0];
   });
 
-const app = new Hono();
-
-app.post(
+const server = new Hono();
+const api = new Hono();
+api.post( // это можно встраивать и миксовать с основным api
   "/apifly",
-  async (c) => c.json(await server.handleRequest(await c.req.json())),
+  async (c) => c.json(await apiflyServer.handleRequest(await c.req.json())),
 );
-
-// Deno.serve(app.fetch);
+server.route("/api", api);
+Deno.serve(server.fetch);
