@@ -1,10 +1,14 @@
 # apifly
+
 [![JSR](https://jsr.io/badges/@vseplet/apifly)](https://jsr.io/@vseplet/apifly)
 
-**apifly** is a small typed library designed for state sharing in client-server applications and remote procedure calls for different runtime environments.
+**apifly** is a small typed library designed for state sharing in client-server
+applications and remote procedure calls for different runtime environments.
 
 ## Quick Start:
+
 #### 1. Обределить тип состояния и процедур в **MyApiflyDefinition.ts**:
+
 ```ts
 import { ApiflyDefinition } from "@vseplet/apifly/types";
 
@@ -25,7 +29,9 @@ export type MyApiflyDefinition = ApiflyDefinition<
   }
 >;
 ```
+
 #### 2. Создать клиент (используется @vseplet/fetchify):
+
 ```ts
 import apifly from "@vseplet/apifly";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
@@ -37,6 +43,7 @@ export const client = new apifly.client<MyApiflyDefinition>({
   },
 });
 ```
+
 #### 3. Создать сервер (на примере hono):
 
 ```ts
@@ -57,7 +64,7 @@ const apiflyServer = new apifly.server<MyApiflyDefinition>()
   })
   .procedure("hi", async (args) => {
     return "Hello, World";
-  })
+  });
 
 const server = new Hono();
 const api = new Hono();
@@ -67,5 +74,4 @@ api.post( // это можно встраивать и миксовать с о�
 );
 server.route("/api", api);
 Deno.serve(server.fetch);
-
 ```

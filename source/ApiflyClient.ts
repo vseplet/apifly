@@ -11,6 +11,13 @@ import fetchify from "@vseplet/fetchify";
 import type { Fetchify } from "@vseplet/fetchify/Fetchify";
 import type { IFetchifyConfig } from "@vseplet/fetchify/types";
 
+/**
+ * @description ApiflyClient is a client for Apifly.
+ * @example
+ * ```ts
+ * const client = new ApiflyClient<ApiflyDefinition>();
+ * ```
+ */
 export class ApiflyClient<
   D extends ApiflyDefinition<any, any>,
 > {
