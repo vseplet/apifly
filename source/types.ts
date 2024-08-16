@@ -1,9 +1,12 @@
+type Role = string; // Его потом переопределим
+
 type RecursiveGuards<T, D = T> = {
   [K in keyof T]?: T[K] extends object ? RecursiveGuards<T[K], D>
     : (
+      role: Role,
+      currentValue: T[K],
+      newValue: T[K],
       state: D,
-      value: T[K],
-      update: T[K],
     ) => boolean;
 };
 
@@ -27,6 +30,22 @@ type RecursiveWatchers<T, D = T> = {
  * @returns The Apifly watcher
  */
 export type ApiflyWatchers<T> = RecursiveWatchers<T>;
+
+type RecursiveHandlers<T, D = T> = {
+  [K in keyof T]?: T[K] extends object ? RecursiveHandlers<T[K], D>
+    : (
+      oldV: T[K],
+      newV: T[K],
+      state: D,
+    ) => Promise<void>;
+};
+
+/**
+ * Defines an Apifly post-update handler
+ * @param T The state type
+ * @returns The Apifly post-update handler
+ */
+export type ApiflyHandlers<T> = RecursiveHandlers<T>;
 
 /**
  * Defines an Apifly patch
@@ -124,6 +143,9 @@ export type ApiflyDefinition<
   state: S;
   rpc: R;
   extra: E;
+  guards?: ApiflyGuards<S>;
+  handlers?: ApiflyHandlers<S>;
+  watchers?: ApiflyWatchers<S>;
 };
 
 /**
