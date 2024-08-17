@@ -2,6 +2,12 @@
 
 [![JSR](https://jsr.io/badges/@vseplet/apifly)](https://jsr.io/@vseplet/apifly)
 
+## 👋 👋 ATTENTION!
+
+> This package is under development and will be frequently updated. The author
+> would appreciate any help, advice, and pull requests! Thank you for your
+> understanding 😊
+
 **apifly** is a small typed library designed for state sharing in client-server
 applications and remote procedure calls for different runtime environments.
 
