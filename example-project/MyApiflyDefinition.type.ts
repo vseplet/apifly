@@ -1,4 +1,4 @@
-import type { ApiflyDefinition } from "$types";
+import type { ApiflyDefinition } from "@vseplet/apifly/types";
 
 export type MyApiflyDefinition = ApiflyDefinition<
   {
@@ -22,5 +22,8 @@ export type MyApiflyDefinition = ApiflyDefinition<
       args: [number, boolean, string];
       returns: [number, number, number];
     };
+  },
+  {
+    role: "admin" | "user";
   }
 >;

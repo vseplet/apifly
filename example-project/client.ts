@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-unused-vars
-import apifly from "$apifly";
+import apifly from "@vseplet/apifly";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 
 export const client = new apifly.client<MyApiflyDefinition>({
@@ -9,10 +9,12 @@ export const client = new apifly.client<MyApiflyDefinition>({
   },
 });
 
-// const a1 = await client.get();
-// console.log(a1);
-const a2 = await client.patch({ a: { b: "Hello!" } });
-console.log(a2);
+const [value, err] = await client.get();
+if (err) Deno.exit(1);
+console.log(value);
+
+// value = await client.patch({ a: { b: "Hello!" } });
+// console.log(value);
 // // const a3 = await client.patch({ x: { z: "Hello!" } });
 
 // const r1 = await client.call("hi", ["world", 100]);

@@ -1,5 +1,5 @@
 // deno-lint-ignore-file require-await
-import apifly from "$apifly";
+import apifly from "@vseplet/apifly";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 import { Hono } from "@hono/hono";
 
@@ -22,7 +22,7 @@ const apiflyServer = new apifly.server<MyApiflyDefinition>()
       },
     },
   })
-  .store(async (state) => {
+  .unload(async (state) => {
     console.log(state);
   })
   .watchers({
@@ -49,5 +49,6 @@ api.post( // это можно встраивать и миксовать с о�
   "/apifly",
   async (c) => c.json(await apiflyServer.handleRequest(await c.req.json())),
 );
+
 server.route("/api", api);
 Deno.serve(server.fetch);

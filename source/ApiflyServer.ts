@@ -14,11 +14,18 @@ import type {
 export class ApiflyServer<
   D extends ApiflyDefinition<any, any>,
 > {
-  private stateLoad: () => Promise<InferStateType<D>> = () => {
+  private stateLoad: (
+    req: ApiflyRequest<InferStateType<D>>,
+  ) => Promise<InferStateType<D>> = () => {
     throw new Error("State load not implemented");
   };
-  private stateStore: (state: InferStateType<D>) => Promise<void> = (state) => {
-    throw new Error("State store not implemented");
+  private stateUnload: (
+    state: InferStateType<D>,
+    req: ApiflyRequest<InferStateType<D>>,
+  ) => Promise<void> = (
+    state,
+  ) => {
+    throw new Error("State unload not implemented");
   };
   private watchersList: ApiflyWatchers<InferStateType<D>> = {};
   private guardsList: ApiflyGuards<InferStateType<D>> = {};
@@ -75,8 +82,8 @@ export class ApiflyServer<
    * @param cb The callback to store the state to.
    * @returns The server instance.
    */
-  store(cb: (state: InferStateType<D>) => Promise<void>): ApiflyServer<D> {
-    this.stateStore = cb;
+  unload(cb: (state: InferStateType<D>) => Promise<void>): ApiflyServer<D> {
+    this.stateUnload = cb;
     return this;
   }
 
@@ -89,23 +96,6 @@ export class ApiflyServer<
   }
 
   /**
-   * Loads the state
-   * @returns The state.
-   */
-  private async getState() {
-    return await this.stateLoad();
-  }
-
-  /**
-   * Stores the state
-   * @param state The state to store.
-   * @returns The server instance.
-   */
-  private async putState(state: InferStateType<D>): Promise<void> {
-    return await this.stateStore(state);
-  }
-
-  /**
    * Handles a request
    * @param req The request to handle.
    * @returns The response to the request.
@@ -113,15 +103,29 @@ export class ApiflyServer<
   async handleRequest(
     req: ApiflyRequest<InferStateType<D>>,
   ): Promise<ApiflyResponse<InferStateType<D>>> {
-    const newState = {} as InferStateType<D>;
-    // load state
-    const state = await this.stateLoad();
-    // apply guards
-    // store state
-    await this.stateStore(newState);
-    // apply watchers
+    try {
+      const type = req.type;
+      const state = await this.stateLoad(req);
 
+      if (type == "get") {
+      } else if (type == "patch") {
+      }
+
+      const newState = {} as InferStateType<D>;
+      // load state
+      // apply guards
+      // store state
+      await this.stateUnload(newState, req);
+      // apply watchers
+    } catch (e: unknown) {
+    }
     // apply rpc
     throw new Error("HandleRequest not implemented");
   }
+
+  async get() {}
+
+  async patch() {}
+
+  async call() {}
 }

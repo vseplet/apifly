@@ -143,9 +143,6 @@ export type ApiflyDefinition<
   state: S;
   rpc: R;
   extra: E;
-  guards?: ApiflyGuards<S>;
-  handlers?: ApiflyHandlers<S>;
-  watchers?: ApiflyWatchers<S>;
 };
 
 /**

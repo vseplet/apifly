@@ -30,13 +30,20 @@ export class ApiflyClient<
   }
 
   // @ts-ignore
-  async get(): Promise<ApiflyResponse<InferStateType<D>>> {
-    // @ts-ignore
-    return await this.fetchify.post("", {
-      body: JSON.stringify({
-        type: "get",
-      }),
-    });
+  async get(): Promise<
+    [ApiflyResponse<InferStateType<D>> | null, Error | null]
+  > {
+    try {
+      // @ts-ignore
+      const response = await this.fetchify.post("", {
+        body: JSON.stringify({
+          type: "get",
+        }),
+      });
+      return [await response.json(), null];
+    } catch (error) {
+      return [null, error];
+    }
   }
 
   async patch(
