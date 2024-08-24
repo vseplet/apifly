@@ -3,7 +3,7 @@ import apifly from "@vseplet/apifly";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 import { Hono } from "@hono/hono";
 
-const apiflyServer = new apifly.server<MyApiflyDefinition>()
+const apiflyServer = new apifly.manager<MyApiflyDefinition>()
   .load(async (args) => {
     const state = {
       a: {
@@ -46,8 +46,8 @@ const apiflyServer = new apifly.server<MyApiflyDefinition>()
     return [0, 0, 0];
   });
 
-// apiflyServer.guard("a.c.d", () => {});
-// apiflyServer.watcher("a.c.d", () => {});
+// const [path, cb] = guard<MyApiflyDefinition>("a.b.d", () => {});
+// apiflyServer.guard(path, cb);
 
 const server = new Hono();
 const api = new Hono();

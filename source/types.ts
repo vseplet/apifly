@@ -196,7 +196,7 @@ export type ApiflyRequest<T> = {
 export type ApiflyResponse<T> = {
   state: ApiflyStatePart<T>;
   stateHash?: string;
-  error: string | null;
+  error: Error | null;
   returns?: {
     [key: string]: any;
   };

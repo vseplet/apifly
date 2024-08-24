@@ -1,5 +1,6 @@
 import type { ApiflyDefinition } from "$types";
 import { ApiflyClient } from "./ApiflyClient.ts";
+import { ApiflyManager } from "./ApiflyManager.ts";
 import { ApiflyServer } from "./ApiflyServer.ts";
 import * as v from "@valibot/valibot";
 
@@ -33,6 +34,7 @@ export const apiflyDefine = <
 
 export default {
   client: ApiflyClient,
+  manager: ApiflyManager,
   server: ApiflyServer,
   define: apiflyDefine,
   v,
