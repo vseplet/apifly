@@ -4,8 +4,8 @@ import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 import { Hono } from "@hono/hono";
 
 const apiflyServer = new apifly.server<MyApiflyDefinition>()
-  .load(async () => {
-    return {
+  .load(async (args) => {
+    const state = {
       a: {
         b: "1",
         c: {
@@ -13,23 +13,26 @@ const apiflyServer = new apifly.server<MyApiflyDefinition>()
         },
       },
     };
+    console.log("load!");
+    return [state, null];
   })
   .guards({
-    "a": {
-      "b": (state, value, patch) => patch === "1",
-      "c": {
-        "d": (state, value, patch) => patch === true,
+    a: {
+      b: (args) => true,
+      c: {
+        d: (args) => false,
       },
     },
   })
-  .unload(async (state) => {
-    console.log(state);
+  .unload(async (args) => {
+    console.log("unload!");
+    return null;
   })
   .watchers({
-    "a": {
-      "b": async (_state) => {},
-      "c": {
-        "d": async (_state) => {},
+    a: {
+      b: async (args) => {},
+      c: {
+        d: async (args) => {},
       },
     },
   })
@@ -43,11 +46,18 @@ const apiflyServer = new apifly.server<MyApiflyDefinition>()
     return [0, 0, 0];
   });
 
+// apiflyServer.guard("a.c.d", () => {});
+// apiflyServer.watcher("a.c.d", () => {});
+
 const server = new Hono();
 const api = new Hono();
-api.post( // это можно встраивать и миксовать с основным api
+api.post(
+  // это можно встраивать и миксовать с основным api
   "/apifly",
-  async (c) => c.json(await apiflyServer.handleRequest(await c.req.json())),
+  async (c) =>
+    c.json(
+      await apiflyServer.handleRequest(await c.req.json(), { role: "admin" }),
+    ),
 );
 
 server.route("/api", api);

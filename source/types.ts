@@ -1,13 +1,17 @@
-type Role = string; // Его потом переопределим
+// Guards
 
-type RecursiveGuards<T, D = T> = {
-  [K in keyof T]?: T[K] extends object ? RecursiveGuards<T[K], D>
-    : (
-      role: Role,
-      currentValue: T[K],
-      newValue: T[K],
-      state: D,
-    ) => boolean;
+export type ApiflyGuard<TExtra, TValue, TStatePart> = (
+  args: {
+    currentValue: TValue;
+    newValue: TValue;
+    state: TStatePart;
+  } & TExtra,
+) => boolean;
+
+type RecursiveGuards<TExtra, TState, TStatePart = TState> = {
+  [K in keyof TState]?: TState[K] extends object
+    ? RecursiveGuards<TExtra, TState[K], TStatePart>
+    : ApiflyGuard<TExtra, TState[K], TStatePart>;
 };
 
 /**
@@ -15,13 +19,42 @@ type RecursiveGuards<T, D = T> = {
  * @param T The state type
  * @returns The Apifly guard
  */
-export type ApiflyGuards<T> = RecursiveGuards<T>;
+export type ApiflyGuards<E, T> = RecursiveGuards<E, T>;
 
-type RecursiveWatchers<T, D = T> = {
-  [K in keyof T]?: T[K] extends object ? RecursiveWatchers<T[K], D>
-    : (
-      state: D,
-    ) => Promise<void>;
+// Filters
+
+export type ApiflyFilter<TExtra, TValue, TStatePart> = (
+  args: {
+    currentValue: TValue;
+    state: TStatePart;
+  } & TExtra,
+) => boolean;
+
+type RecursiveFilters<TExtra, TState, TStatePart = TState> = {
+  [K in keyof TState]?: TState[K] extends object
+    ? RecursiveFilters<TExtra, TState[K], TStatePart>
+    : ApiflyFilter<TExtra, TState[K], TStatePart>;
+};
+
+export type ApiflyFilters<TExtra, TStatePart> = RecursiveFilters<
+  TExtra,
+  TStatePart
+>;
+
+// Watchers
+
+export type ApiflyWatcher<TExtra, TValue, TStatePart> = (
+  args: {
+    currentValue: TValue;
+    newValue: TValue;
+    state: TStatePart;
+  } & TExtra,
+) => Promise<void>;
+
+type RecursiveWatchers<TExtra, TState, TStatePart = TState> = {
+  [K in keyof TState]?: TState[K] extends object
+    ? RecursiveWatchers<TExtra, TState[K], TStatePart>
+    : ApiflyWatcher<TExtra, TState[K], TStatePart>;
 };
 
 /**
@@ -29,23 +62,23 @@ type RecursiveWatchers<T, D = T> = {
  * @param T The state type
  * @returns The Apifly watcher
  */
-export type ApiflyWatchers<T> = RecursiveWatchers<T>;
+export type ApiflyWatchers<TExtra, TStatePart> = RecursiveWatchers<
+  TExtra,
+  TStatePart
+>;
 
-type RecursiveHandlers<T, D = T> = {
-  [K in keyof T]?: T[K] extends object ? RecursiveHandlers<T[K], D>
-    : (
-      oldV: T[K],
-      newV: T[K],
-      state: D,
-    ) => Promise<void>;
-};
+// type RecursiveHandlers<T, D = T> = {
+//   [K in keyof T]?: T[K] extends object
+//     ? RecursiveHandlers<T[K], D>
+//     : (oldV: T[K], newV: T[K], state: D) => Promise<void>;
+// };
 
-/**
- * Defines an Apifly post-update handler
- * @param T The state type
- * @returns The Apifly post-update handler
- */
-export type ApiflyHandlers<T> = RecursiveHandlers<T>;
+// /**
+//  * Defines an Apifly post-update handler
+//  * @param T The state type
+//  * @returns The Apifly post-update handler
+//  */
+// export type ApiflyHandlers<T> = RecursiveHandlers<T>;
 
 /**
  * Defines an Apifly patch
@@ -53,8 +86,7 @@ export type ApiflyHandlers<T> = RecursiveHandlers<T>;
  * @returns The Apifly patch
  */
 export type ApiflyPatch<T> = {
-  [K in keyof T]?: T[K] extends object ? ApiflyPatch<T[K]>
-    : T[K];
+  [K in keyof T]?: T[K] extends object ? ApiflyPatch<T[K]> : T[K];
 };
 
 /**
@@ -63,8 +95,7 @@ export type ApiflyPatch<T> = {
  * @returns The Apifly state part
  */
 export type ApiflyStatePart<T> = {
-  [K in keyof T]?: T[K] extends object ? ApiflyPatch<T[K]>
-    : T[K];
+  [K in keyof T]?: T[K] extends object ? ApiflyPatch<T[K]> : T[K];
 };
 
 /**
@@ -72,8 +103,10 @@ export type ApiflyStatePart<T> = {
  * @param T The Apifly definition
  * @returns The state type
  */
-export type InferStateType<T> = T extends ApiflyDefinition<infer A, infer B> ? A
-  : never;
+export type InferStateType<T> =
+  T extends ApiflyDefinition<infer A, infer B> ? A : never;
+
+// RPC
 
 /**
  * Defines an Apifly RPC definition
@@ -99,16 +132,16 @@ export type ApiflyRpcListDefinition = {
  * @param T The RPC definition
  * @returns The RPC arguments
  */
-export type InferRpcArgs<T> = T extends ApiflyRpcDefinition<infer A, any> ? A
-  : never;
+export type InferRpcArgs<T> =
+  T extends ApiflyRpcDefinition<infer A, any> ? A : never;
 
 /**
  * Infer the RPC returns
  * @param T The RPC definition
  * @returns The RPC returns
  */
-export type InferRpcReturns<T> = T extends ApiflyRpcDefinition<any, infer B> ? B
-  : never;
+export type InferRpcReturns<T> =
+  T extends ApiflyRpcDefinition<any, infer B> ? B : never;
 
 /**
  * Infer the RPC list arguments
@@ -135,11 +168,7 @@ export type InferRpcListReturns<T extends ApiflyRpcListDefinition> = {
  * @param E The extra type
  * @returns The Apifly definition
  */
-export type ApiflyDefinition<
-  S,
-  R extends ApiflyRpcListDefinition,
-  E = {},
-> = {
+export type ApiflyDefinition<S, R extends ApiflyRpcListDefinition, E = {}> = {
   state: S;
   rpc: R;
   extra: E;

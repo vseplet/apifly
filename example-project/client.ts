@@ -9,13 +9,17 @@ export const client = new apifly.client<MyApiflyDefinition>({
   },
 });
 
+// await client.call()
+// await client.get()
+
 const [value, err] = await client.get();
-if (err) Deno.exit(1);
+// if (err) Deno.exit(1);
 console.log(value);
 
 // value = await client.patch({ a: { b: "Hello!" } });
 // console.log(value);
-// // const a3 = await client.patch({ x: { z: "Hello!" } });
+// const a3 = await client.patch({ x: { z: "Hello!" } });
+// console.log(a3);
 
 // const r1 = await client.call("hi", ["world", 100]);
 // const r2 = await client.call("hi2", [2000]);
