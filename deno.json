@@ -1,7 +1,7 @@
 {
   "lock": false,
   "name": "@vseplet/apifly",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "workflows": {
     "UpdateSemverDeployJsr": {
       "versionsFilePath": "./source/versions.ts"
@@ -29,6 +29,8 @@
     "pub-dry": "deno publish --dry-run --allow-slow-types"
   },
   "fmt": {
-    "exclude": ["./source/versions.ts"]
+    "exclude": [
+      "./source/versions.ts"
+    ]
   }
 }
