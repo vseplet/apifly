@@ -2,6 +2,7 @@
   "lock": false,
   "name": "@vseplet/apifly",
   "version": "0.0.14",
+  "license": "MIT",
   "workflows": {
     "UpdateSemverDeployJsr": {
       "versionsFilePath": "./source/versions.ts"

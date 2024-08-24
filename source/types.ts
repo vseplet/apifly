@@ -103,8 +103,8 @@ export type ApiflyStatePart<T> = {
  * @param T The Apifly definition
  * @returns The state type
  */
-export type InferStateType<T> =
-  T extends ApiflyDefinition<infer A, infer B> ? A : never;
+export type InferStateType<T> = T extends ApiflyDefinition<infer A, infer B> ? A
+  : never;
 
 // RPC
 
@@ -132,16 +132,16 @@ export type ApiflyRpcListDefinition = {
  * @param T The RPC definition
  * @returns The RPC arguments
  */
-export type InferRpcArgs<T> =
-  T extends ApiflyRpcDefinition<infer A, any> ? A : never;
+export type InferRpcArgs<T> = T extends ApiflyRpcDefinition<infer A, any> ? A
+  : never;
 
 /**
  * Infer the RPC returns
  * @param T The RPC definition
  * @returns The RPC returns
  */
-export type InferRpcReturns<T> =
-  T extends ApiflyRpcDefinition<any, infer B> ? B : never;
+export type InferRpcReturns<T> = T extends ApiflyRpcDefinition<any, infer B> ? B
+  : never;
 
 /**
  * Infer the RPC list arguments
@@ -201,3 +201,9 @@ export type ApiflyResponse<T> = {
     [key: string]: any;
   };
 };
+
+export type NestedKeyOf<ObjectType extends object> = {
+  [Key in keyof ObjectType & (string | number)]: ObjectType[Key] extends object
+    ? `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
+    : `${Key}`;
+}[keyof ObjectType & (string | number)];

@@ -187,7 +187,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   async get(extra: D["extra"]): Promise<[InferStateType<D>, Error | null]> {
     const response = await this.handleRequest({ type: "get" }, extra);
     if (response.error) {
-      return [{}, response.error];
+      return [{} as InferStateType<D>, response.error];
     } else {
       // return [response.state, null];
     }

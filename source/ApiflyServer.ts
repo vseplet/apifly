@@ -1,15 +1,7 @@
 // deno-lint-ignore-file no-unused-vars
-import type {
-  ApiflyDefinition,
-  ApiflyFilters,
-  ApiflyGuards,
-  ApiflyRequest,
-  ApiflyResponse,
-  ApiflyWatchers,
-  InferStateType,
-} from "$types";
+import type { ApiflyDefinition } from "$types";
 
-import { Hono, type Context } from "@hono/hono";
+import { type Context, Hono } from "@hono/hono";
 
 import type { ApiflyManager } from "./ApiflyManager.ts";
 
