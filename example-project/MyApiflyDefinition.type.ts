@@ -1,4 +1,4 @@
-import type { ApiflyDefinition } from "../source/types.ts";
+import type { ApiflyDefinition } from "@vseplet/apifly/types";
 
 export type MyApiflyDefinition = ApiflyDefinition<
   {
