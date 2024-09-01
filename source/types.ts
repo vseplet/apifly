@@ -103,8 +103,8 @@ export type ApiflyStatePart<T> = {
  * @param T The Apifly definition
  * @returns The state type
  */
-export type InferStateType<T> = T extends ApiflyDefinition<infer A, infer B> ? A
-  : never;
+export type InferStateType<T> =
+  T extends ApiflyDefinition<infer A, infer B> ? A : never;
 
 // RPC
 
@@ -132,16 +132,16 @@ export type ApiflyRpcListDefinition = {
  * @param T The RPC definition
  * @returns The RPC arguments
  */
-export type InferRpcArgs<T> = T extends ApiflyRpcDefinition<infer A, any> ? A
-  : never;
+export type InferRpcArgs<T> =
+  T extends ApiflyRpcDefinition<infer A, any> ? A : never;
 
 /**
  * Infer the RPC returns
  * @param T The RPC definition
  * @returns The RPC returns
  */
-export type InferRpcReturns<T> = T extends ApiflyRpcDefinition<any, infer B> ? B
-  : never;
+export type InferRpcReturns<T> =
+  T extends ApiflyRpcDefinition<any, infer B> ? B : never;
 
 /**
  * Infer the RPC list arguments
@@ -202,8 +202,40 @@ export type ApiflyResponse<T> = {
   };
 };
 
-export type NestedKeyOf<ObjectType extends object> = {
-  [Key in keyof ObjectType & (string | number)]: ObjectType[Key] extends object
-    ? `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
-    : `${Key}`;
-}[keyof ObjectType & (string | number)];
+export type NestedKeyOf<T extends object> = {
+  [K in keyof T & (string | number)]: T[K] extends object
+    ? `${K}` | `${K}.${NestedKeyOf<T[K]>}`
+    : `${K}`;
+}[keyof T & (string | number)];
+
+export type GetValueByKey<
+  T,
+  K extends string,
+> = K extends `${infer Key}.${infer Rest}`
+  ? Key extends keyof T
+    ? GetValueByKey<T[Key], Rest>
+    : never
+  : K extends keyof T
+    ? T[K]
+    : never;
+
+// function ololo<T extends object>() {
+//   return function <K extends NestedKeyOf<T>>(
+//     key: K,
+//     callback: (args: { value: GetValueByKey<T, K> }) => boolean,
+//   ) {};
+// }
+
+// const Myobj = {
+//   a: {
+//     b: {
+//       c: 100,
+//     },
+//     e: "trololo",
+//   },
+// };
+
+// ololo<typeof Myobj>()("a.e", ({ value }) => {
+//   console.log(value);
+//   return true;
+// });
