@@ -3,7 +3,7 @@ import { ApiflyClient } from "./ApiflyClient.ts";
 import { ApiflyManager } from "./ApiflyManager.ts";
 import { ApiflyServer } from "./ApiflyServer.ts";
 import * as v from "@valibot/valibot";
-import { guard, watcher } from "./helpers.ts";
+import { filter, guard, loader, unloader, watcher } from "./helpers.ts";
 
 export { v };
 export { ApiflyClient, ApiflyServer };
@@ -36,6 +36,9 @@ export const apiflyDefine = <
 export default {
   watcher,
   guard,
+  filter,
+  loader,
+  unloader,
   client: ApiflyClient,
   manager: ApiflyManager,
   server: ApiflyServer,

@@ -1,6 +1,4 @@
-// deno-lint-ignore-file require-await
 import apifly from "../source/mod.ts";
-// import apifly from "@vseplet/apifly";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 import { Hono } from "@hono/hono";
 
@@ -25,15 +23,27 @@ const apiflyServer = new apifly.manager<MyApiflyDefinition>()
       },
     },
   })
+  .filters({
+    a: {
+      b: (args) => args.currentValue === "1",
+      c: {
+        d: (args) => args.currentValue,
+      },
+    },
+  })
   .unload(async (args) => {
     console.log("unload!");
     return null;
   })
   .watchers({
     a: {
-      b: async (args) => {},
+      b: async (args) => {
+        console.log("Watcher on a.b triggered:", args.currentValue);
+      },
       c: {
-        d: async (args) => {},
+        d: async (args) => {
+          console.log("Watcher on a.c.d triggered:", args.currentValue);
+        },
       },
     },
   })
@@ -47,27 +57,44 @@ const apiflyServer = new apifly.manager<MyApiflyDefinition>()
     return [0, 0, 0];
   });
 
-// const [path, cb] = guard<MyApiflyDefinition>("a.b.d", () => {});
-// apiflyServer.guard(path, cb);
-
 apifly.guard<MyApiflyDefinition>()(
   "a.c.d",
   ({ currentValue, newValue, state }) => true,
 );
 
-apifly.watcher<MyApiflyDefinition>()("a.b", ({ currentValue }) => {
-  return;
+apifly.watcher<MyApiflyDefinition>()(
+  "a.b",
+  async ({ currentValue, state }) => {},
+);
+
+apifly.filter<MyApiflyDefinition>()(
+  "a.c.d",
+  ({ currentValue, state }) => currentValue === true,
+);
+
+apifly.loader<MyApiflyDefinition>()(async (args) => {
+  const initialState = {
+    a: {
+      b: "1",
+      c: {
+        d: true,
+      },
+    },
+  };
+  return [initialState, null];
+});
+
+apifly.unloader<MyApiflyDefinition>()(async (args) => {
+  console.log("Cleanup on unload!");
+  return null;
 });
 
 const server = new Hono();
 const api = new Hono();
-api.post(
-  // это можно встраивать и миксовать с основным api
-  "/apifly",
-  async (c) =>
-    c.json(
-      await apiflyServer.handleRequest(await c.req.json(), { role: "admin" }),
-    ),
+api.post("/apifly", async (c) =>
+  c.json(
+    await apiflyServer.handleRequest(await c.req.json(), { role: "admin" }),
+  ),
 );
 
 server.route("/api", api);
