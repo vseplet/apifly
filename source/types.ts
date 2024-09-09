@@ -8,6 +8,12 @@ export type ApiflyGuard<TExtra, TValue, TStatePart> = (
   } & TExtra,
 ) => boolean;
 
+// type RecursiveGuards<TExtra, TState, TStatePart = TState> = {
+//   [K in keyof TState]?: TState[K] extends object
+//     ? RecursiveGuards<TExtra, TState[K], TStatePart>
+//     : ApiflyGuard<TExtra, TState[K], TStatePart>;
+// };
+
 type RecursiveGuards<TExtra, TState, TStatePart = TState> = {
   [K in keyof TState]?: TState[K] extends object
     ? RecursiveGuards<TExtra, TState[K], TStatePart>
@@ -103,8 +109,8 @@ export type ApiflyStatePart<T> = {
  * @param T The Apifly definition
  * @returns The state type
  */
-export type InferStateType<T> =
-  T extends ApiflyDefinition<infer A, infer B> ? A : never;
+export type InferStateType<T> = T extends ApiflyDefinition<infer A, infer B> ? A
+  : never;
 
 // RPC
 
@@ -132,16 +138,16 @@ export type ApiflyRpcListDefinition = {
  * @param T The RPC definition
  * @returns The RPC arguments
  */
-export type InferRpcArgs<T> =
-  T extends ApiflyRpcDefinition<infer A, any> ? A : never;
+export type InferRpcArgs<T> = T extends ApiflyRpcDefinition<infer A, any> ? A
+  : never;
 
 /**
  * Infer the RPC returns
  * @param T The RPC definition
  * @returns The RPC returns
  */
-export type InferRpcReturns<T> =
-  T extends ApiflyRpcDefinition<any, infer B> ? B : never;
+export type InferRpcReturns<T> = T extends ApiflyRpcDefinition<any, infer B> ? B
+  : never;
 
 /**
  * Infer the RPC list arguments
@@ -180,9 +186,10 @@ export type ApiflyDefinition<S, R extends ApiflyRpcListDefinition, E = {}> = {
  * @returns The Apifly request
  */
 export type ApiflyRequest<T> = {
-  type: "get" | "patch";
+  type: "get" | "patch" | "call";
   calls?: {
-    name: string;
+    name: string | number | symbol;
+    // deno-lint-ignore no-explicit-any
     args: any[];
   }[];
   patch?: ApiflyPatch<T>;
@@ -196,7 +203,7 @@ export type ApiflyRequest<T> = {
 export type ApiflyResponse<T> = {
   state: ApiflyStatePart<T>;
   stateHash?: string;
-  error: Error | null;
+  error: Error | string | null;
   returns?: {
     [key: string]: any;
   };
@@ -212,30 +219,7 @@ export type GetValueByKey<
   T,
   K extends string,
 > = K extends `${infer Key}.${infer Rest}`
-  ? Key extends keyof T
-    ? GetValueByKey<T[Key], Rest>
-    : never
-  : K extends keyof T
-    ? T[K]
-    : never;
-
-// function ololo<T extends object>() {
-//   return function <K extends NestedKeyOf<T>>(
-//     key: K,
-//     callback: (args: { value: GetValueByKey<T, K> }) => boolean,
-//   ) {};
-// }
-
-// const Myobj = {
-//   a: {
-//     b: {
-//       c: 100,
-//     },
-//     e: "trololo",
-//   },
-// };
-
-// ololo<typeof Myobj>()("a.e", ({ value }) => {
-//   console.log(value);
-//   return true;
-// });
+  ? Key extends keyof T ? GetValueByKey<T[Key], Rest>
+  : never
+  : K extends keyof T ? T[K]
+  : never;

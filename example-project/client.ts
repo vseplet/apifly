@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-unused-vars
-import apifly from "@vseplet/apifly";
+import apifly from "../source/mod.ts";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 
 export const client = new apifly.client<MyApiflyDefinition>({
@@ -9,19 +9,23 @@ export const client = new apifly.client<MyApiflyDefinition>({
   },
 });
 
-// await client.call()
-// await client.get()
-
 const [value, err] = await client.get();
-// if (err) Deno.exit(1);
-console.log(value);
 
-// value = await client.patch({ a: { b: "Hello!" } });
-// console.log(value);
-// const a3 = await client.patch({ x: { z: "Hello!" } });
-// console.log(a3);
+if (err) {
+  console.error("Error fetching state:", err);
+  Deno.exit(1);
+} else {
+  console.log("Initial state:", value);
+}
 
-// const r1 = await client.call("hi", ["world", 100]);
-// const r2 = await client.call("hi2", [2000]);
-// const r3 = await client.call("hi3", [2000, true, "hello"]);
-// // const r4 = await client.call("hi4", [2000, true, "hello", { a: 1 }]);
+const patchedValue = await client.patch({ a: { b: "Hello!" } });
+console.log("Patched state:", patchedValue);
+
+const r1 = await client.call("hi", ["world", 100]);
+console.log("Procedure hi result:", r1);
+
+const r2 = await client.call("hi2", [2000]);
+console.log("Procedure hi2 result:", r2);
+
+const r3 = await client.call("hi3", [2000, true, "hello"]);
+console.log("Procedure hi3 result:", r3);

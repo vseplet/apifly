@@ -1,12 +1,11 @@
 import type {
   ApiflyDefinition,
+  ApiflyFilter,
   ApiflyGuard,
   ApiflyWatcher,
-  ApiflyFilter,
   GetValueByKey,
   NestedKeyOf,
 } from "$types";
-
 export const procedure = <X>(
   name: string,
   fn: (state: X) => Promise<void>,

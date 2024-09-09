@@ -10,14 +10,6 @@ import type {
 import fetchify from "@vseplet/fetchify";
 import type { Fetchify } from "@vseplet/fetchify/Fetchify";
 import type { IFetchifyConfig } from "@vseplet/fetchify/types";
-
-/**
- * @description ApiflyClient is a client for Apifly.
- * @example
- * ```ts
- * const client = new ApiflyClient<ApiflyDefinition>();
- * ```
- */
 export class ApiflyClient<
   D extends ApiflyDefinition<any, any>,
 > {
@@ -29,49 +21,70 @@ export class ApiflyClient<
     this.fetchify = fetchify.create(fetchifyConfig);
   }
 
-  // @ts-ignore
   async get(): Promise<
     [ApiflyResponse<InferStateType<D>> | null, Error | null]
   > {
+    console.log("Sending GET request");
     try {
-      // @ts-ignore
       const response = await this.fetchify.post("", {
         body: JSON.stringify({
           type: "get",
         }),
       });
-      return [await response.json(), null];
+      const result = await response.json();
+      console.log("Received GET response:", result);
+      return [result, null];
     } catch (error) {
+      console.error("GET request error:", error);
       return [null, error];
     }
   }
 
   async patch(
     patch: ApiflyPatch<InferStateType<D>>,
-    // @ts-ignore
   ): Promise<ApiflyResponse<InferStateType<D>>> {
-    // @ts-ignore
-    return await this.fetchify.post("", {
-      body: JSON.stringify({
-        type: "patch",
-        patch,
-      }),
-    });
+    console.log("Sending PATCH request with patch:", patch);
+    try {
+      const response = await this.fetchify.post("", {
+        body: JSON.stringify({
+          type: "patch",
+          patch,
+        }),
+      });
+      const result = await response.json();
+      console.log("Received PATCH response:", result);
+      return result;
+    } catch (error) {
+      console.error("PATCH request error:", error);
+      throw new Error("Patch request failed");
+    }
   }
 
   async call<N extends keyof D["rpc"]>(
     name: N,
-    args: InferRpcListArgs<D["rpc"]>[N], // Выводим тип аргументов
-  ): Promise<InferRpcListReturns<D["rpc"]>[N]> { // Выводим тип возвращаемого значения
-    throw new Error("Not implemented");
-    this.fetchify.post("/call");
-  }
+    args: InferRpcListArgs<D["rpc"]>[N],
+  ): Promise<InferRpcListReturns<D["rpc"]>[N]> {
+    console.log(
+      `Sending CALL request for procedure ${String(name)} with args:`,
+      args,
+    );
+    try {
+      const response = await this.fetchify.post("", {
+        body: JSON.stringify({
+          type: "call",
+          calls: [{ name, args }],
+        }),
+      });
 
-  // async call<N extends keyof D["procedures"]>(
-  //   name: D["procedures"][N]["name"],
-  //   args: D["procedures"][N]["args"],
-  // ) {
-  //   throw new Error("Not implemented");
-  //   // this.fetchify.post("/call");
-  // }
+      const result = await response.json();
+      console.log(
+        `Received CALL response for procedure ${String(name)}:`,
+        result,
+      );
+      return result;
+    } catch (error) {
+      console.error(`CALL request error for procedure ${String(name)}:`, error);
+      throw new Error(`Failed to call procedure ${String(name)}`);
+    }
+  }
 }

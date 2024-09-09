@@ -1,3 +1,4 @@
+// deno-lint-ignore-file
 import apifly from "../source/mod.ts";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 import { Hono } from "@hono/hono";
@@ -91,11 +92,12 @@ apifly.unloader<MyApiflyDefinition>()(async (args) => {
 
 const server = new Hono();
 const api = new Hono();
+
 api.post("/apifly", async (c) =>
   c.json(
     await apiflyServer.handleRequest(await c.req.json(), { role: "admin" }),
-  ),
-);
+  ));
 
 server.route("/api", api);
+
 Deno.serve(server.fetch);
