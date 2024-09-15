@@ -14,6 +14,50 @@ import type {
 } from "$types";
 
 export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
+  private stateCache: InferStateType<D> | null = null;
+  private cacheTTL: number | null = null;
+  private cacheTimestamp: number | null = null;
+  private useCache: boolean = false;
+
+  constructor(useCache: boolean = false) {
+    this.useCache = useCache;
+    console.log(`Caching is ${this.useCache ? "enabled" : "disabled"}`);
+  }
+
+  /**
+   * Set the TTL (Time-to-live) for the cache in milliseconds
+   * @param ttl The time in milliseconds after which the cache should expire
+   */
+  setCacheTTL(ttl: number) {
+    this.cacheTTL = ttl;
+    console.log(`Cache TTL set to ${ttl}ms`);
+    return this;
+  }
+
+  /**
+   * Check if the cache is valid (i.e., not expired)
+   */
+  private isCacheValid(): boolean {
+    if (!this.useCache) {
+      return false;
+    }
+
+    if (!this.stateCache || !this.cacheTTL || !this.cacheTimestamp) {
+      return false;
+    }
+    const currentTime = Date.now();
+    return currentTime - this.cacheTimestamp < this.cacheTTL;
+  }
+
+  /**
+   * Clear the cache manually
+   */
+  clearCache() {
+    this.stateCache = null;
+    this.cacheTimestamp = null;
+    console.log("Cache cleared");
+  }
+
   /**
    * Adds guards
    * @param guards The guards to add.
@@ -79,8 +123,6 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   > = {};
   private guardsList: ApiflyGuards<D["extra"], InferStateType<D>> = {};
   private filtersList: ApiflyFilters<D["extra"], InferStateType<D>> = {};
-
-  constructor() {}
 
   /**
    * Adds a guard
@@ -324,11 +366,32 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
   }
 
+  /**
+   * Fetches the state, either from cache or by calling `stateLoad`
+   */
   async get(extra: D["extra"]): Promise<[InferStateType<D>, Error | null]> {
-    console.log("Fetching current state...");
-    return await this.stateLoad({ req: { type: "get" }, ...extra });
+    if (this.useCache && this.isCacheValid()) {
+      console.log("Returning cached state");
+      return [this.stateCache as InferStateType<D>, null];
+    }
+
+    console.log("Fetching current state from stateLoad...");
+    const [state, error] = await this.stateLoad({
+      req: { type: "get" },
+      ...extra,
+    });
+
+    if (!error) {
+      this.stateCache = state; // Cache the state
+      this.cacheTimestamp = Date.now();
+    }
+
+    return [state, error];
   }
 
+  /**
+   * Patches the state and updates the cache
+   */
   async patch(
     patch: ApiflyPatch<InferStateType<D>>,
     extra: D["extra"],
@@ -372,6 +435,10 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     console.log("Running watchers...");
     await this.applyWatchers(patch, newState, extra);
+
+    // Update the cache
+    this.stateCache = newState;
+    this.cacheTimestamp = Date.now();
 
     return { state: newState, error: null };
   }

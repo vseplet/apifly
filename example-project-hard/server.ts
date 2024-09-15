@@ -13,61 +13,39 @@ let database = {
 
 // Функции эмуляции чтения и записи "базы данных"
 async function readFromDatabase() {
-  // Имитируем чтение данных из базы
   console.log("Reading from DB:", database.state);
+  // Добавляем задержку для имитации реального доступа к данным
+  await new Promise((resolve) => setTimeout(resolve, 2000)); // Задержка 2 секунды
   return database.state;
 }
 
 async function writeToDatabase(newState: any) {
-  // Имитируем запись данных в базу
   console.log("Writing to DB:", newState);
   database.state = newState;
 }
 
-// Инициализируем сервер Apifly
-const apiflyServer = new apifly.manager<MyApiflyDefinition>()
+// Инициализируем сервер Apifly с кэшированием
+const apiflyServer = new apifly.manager<MyApiflyDefinition>(true) // Включаем кэширование
+  .setCacheTTL(5000) // Устанавливаем TTL кэша в 5 секунд
   .load(async (args) => {
-    // Чтение состояния из "базы данных"
     const state = await readFromDatabase();
     return [state, null];
   })
   .unload(async (args) => {
-    // Запись состояния в "базу данных" после изменений
     await writeToDatabase(args.state);
     return null;
   })
-  .guards({
-    counter: (args) => {
-      // Guard: Counter must not go below zero
-      return args.newValue >= 0;
-    },
-  })
-  .filters({
-    message: (args) => {
-      // Filter: Only show the message if it starts with "Hello"
-      return args.currentValue.startsWith("Hello");
-    },
-  })
-  .watchers({
-    counter: async (args) => {
-      console.log(`Counter watcher triggered: ${args.currentValue}`);
-    },
-    message: async (args) => {
-      console.log(`Message watcher triggered: ${args.currentValue}`);
-    },
-  })
   .procedure("incrementCounter", async (args, state) => {
     const [amount] = args;
-    state.counter += amount; // Изменение состояния
-    //TODO: подумать над гуард-защитой от мутабеллных процедур
+    state.counter += amount;
     return `Counter incremented by ${amount}, new value: ${state.counter}`;
   })
   .procedure("resetCounter", async (args, state) => {
-    state.counter = 0; // Сброс состояния
+    state.counter = 0;
     return "Counter reset to 0";
   })
   .procedure("getMessage", async (args, state) => {
-    return state.message; // Возвращение сообщения
+    return state.message;
   });
 
 // Настройка маршрутов Hono
