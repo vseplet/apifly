@@ -348,15 +348,14 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   /**
    * Применяет патч к состоянию и обновляет кэш
    */
+  // Внутри класса ApiflyManager
+
   async patch(
     patch: ApiflyPatch<InferStateType<D>>,
     extra: D["extra"],
   ): Promise<ApiflyResponse<InferStateType<D>>> {
     console.log("Applying patch:", patch);
-    const [currentState, loadError] = await this.stateLoad({
-      req: { type: "get" },
-      ...extra,
-    });
+    const [currentState, loadError] = await this.get(extra);
     if (loadError) {
       console.error("Error loading state:", loadError);
       return { state: {}, error: loadError };
@@ -394,20 +393,20 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return { state: currentState, error: unloadError };
     }
 
-    // Сбрасываем старый кэш
+    // Обновляем кэш новым состоянием
     if (this.cacheEnabled) {
-      const oldCacheUrl = new URL(
-        `https://cache.example.com/${encodeURIComponent(oldCacheKey)}`,
+      const cacheUrl = new URL(
+        `https://cache.example.com/${encodeURIComponent(newCacheKey)}`,
       );
-      await cache.delete(oldCacheUrl);
-      console.log(`Cache cleared for old key: ${oldCacheKey}`);
-      if (newCacheKey !== oldCacheKey) {
-        const newCacheUrl = new URL(
-          `https://cache.example.com/${encodeURIComponent(newCacheKey)}`,
-        );
-        await cache.delete(newCacheUrl);
-        console.log(`Cache cleared for new key: ${newCacheKey}`);
-      }
+
+      const response = new Response(JSON.stringify(newState), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": `max-age=${this.cacheTTL / 1000}`,
+        },
+      });
+      await cache.put(cacheUrl, response);
+      console.log(`🔐 State cached with key: ${newCacheKey}`);
     }
 
     console.log("Running watchers...");
@@ -427,7 +426,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   ): Promise<[D["rpc"][N]["returns"], Error | null]> {
     console.log(`Calling procedure: ${String(name)} with args:`, args);
 
-    const [currentState, loadError] = await this.get({});
+    const [currentState, loadError] = await this.get(extra);
     if (loadError) {
       throw new Error("Failed to load state");
     }
@@ -443,41 +442,44 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     const result = await procedure(args, currentState);
 
+    // Новое состояние после выполнения процедуры
+    const newState = currentState; // Предполагается, что процедура изменяет состояние напрямую
+
+    const newCacheKey = this.getCacheKeyFromExtra(extra);
+
     console.log("Applying filters...");
-    const newState = this.applyFilters(currentState, {});
+    const filteredState = this.applyFilters(newState, extra);
 
     console.log("Saving new state...");
     const unloadError = await this.stateUnload({
       state: newState,
       req: { type: "call", calls: [{ name, args }] },
-      extra: {},
+      ...extra,
     });
     if (unloadError) {
       console.error("Error saving state:", unloadError);
       return [result, unloadError];
     }
 
-    const newCacheKey = this.getCacheKeyFromExtra(extra);
-
-    // Сбрасываем кэш
+    // Обновляем кэш новым состоянием
     if (this.cacheEnabled) {
-      const oldCacheUrl = new URL(
-        `https://cache.example.com/${encodeURIComponent(oldCacheKey)}`,
+      const cacheUrl = new URL(
+        `https://cache.example.com/${encodeURIComponent(newCacheKey)}`,
       );
-      await cache.delete(oldCacheUrl);
-      console.log(`Cache cleared for old key: ${oldCacheKey}`);
-      if (newCacheKey !== oldCacheKey) {
-        const newCacheUrl = new URL(
-          `https://cache.example.com/${encodeURIComponent(newCacheKey)}`,
-        );
-        await cache.delete(newCacheUrl);
-        console.log(`Cache cleared for new key: ${newCacheKey}`);
-      }
+
+      const response = new Response(JSON.stringify(newState), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": `max-age=${this.cacheTTL / 1000}`,
+        },
+      });
+      await cache.put(cacheUrl, response);
+      console.log(`🔐 State cached with key: ${newCacheKey}`);
     }
 
     console.log("Running watchers...");
     const updatedFields = this.getUpdatedFields(previousState, newState);
-    await this.applyWatchers(updatedFields, newState, {});
+    await this.applyWatchers(updatedFields, newState, extra);
 
     return [result, null];
   }

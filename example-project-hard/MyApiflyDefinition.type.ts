@@ -23,5 +23,7 @@ export type MyApiflyDefinition = ApiflyDefinition<
       returns: string;
     };
   },
-  {}
+  {
+    userId: string;
+  }
 >;

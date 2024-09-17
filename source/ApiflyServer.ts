@@ -10,8 +10,7 @@ export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
   constructor(
     private manager: ApiflyManager<D>,
     private basePath: string = "/",
-    private getExtraFromContext: (c: Context) => D["extra"] =
-      () => ({} as D["extra"]),
+    private headerMappings?: Record<keyof D["extra"], string>,
   ) {
     this.router = new Hono();
 
@@ -22,7 +21,7 @@ export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
         console.log("Incoming request:", requestData);
 
         // Извлекаем extra данные из заголовков
-        const extra = this.getExtraFromContext(c);
+        const extra = this.extractExtraFromHeaders(c);
 
         const response = await this.manager.handleRequest(
           requestData,
@@ -39,5 +38,23 @@ export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
    */
   registerRoutes(server: Hono) {
     server.route("/", this.router);
+  }
+
+  /**
+   * Извлекает extra данные из заголовков на основе соответствий
+   */
+  private extractExtraFromHeaders(c: Context): D["extra"] {
+    const extra: Partial<D["extra"]> = {};
+
+    if (this.headerMappings) {
+      for (const [field, headerName] of Object.entries(this.headerMappings)) {
+        const headerValue = c.req.header(headerName as string);
+        if (headerValue) {
+          (extra as any)[field] = headerValue;
+        }
+      }
+    }
+
+    return extra as D["extra"];
   }
 }

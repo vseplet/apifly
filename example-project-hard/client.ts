@@ -1,97 +1,9 @@
 // // client.ts
 import apifly from "../source/mod.ts";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
-
-// export const client = new apifly.client<MyApiflyDefinition>({
-//   baseURL: "http://localhost:8000/api/apifly",
-//   limiter: {
-//     unlimited: true,
-//   },
-// });
-
-// // Тест кэширования с использованием patch и call
-
-// console.log("First GET request (should take 2 seconds)...");
-// const [value1, err1] = await client.get();
-// console.log("Initial state:", value1);
-
-// if (err1) {
-//   console.error("Error in GET request:", err1);
-// }
-
-// // Применение patch (это должно обновить состояние и сбросить кэш)
-// console.log("Applying PATCH to update message and counter...");
-// const patchedState = await client.patch({
-//   message: "Hello, Apifly!",
-//   counter: 5,
-// });
-// console.log("State after PATCH:", patchedState);
-
-// // Вызов get сразу после patch (должен вернуть обновлённое состояние из кэша)
-// console.log("Second GET request (should be instant, from cache)...");
-// const [value2, err2] = await client.get();
-// console.log("State from cache:", value2);
-
-// if (err2) {
-//   console.error("Error in GET request:", err2);
-// }
-
-// // Вызов call для incrementCounter (это должно обновить состояние и сбросить кэш)
-// console.log("Calling incrementCounter...");
-// try {
-//   const incrementResult = await client.call("incrementCounter", [10]);
-//   console.log("Result of incrementCounter:", incrementResult);
-// } catch (incrementError) {
-//   console.error("Error in incrementCounter:", incrementError);
-// }
-
-// // Вызов get после call (должен вернуть обновлённое состояние из кэша)
-// console.log("Third GET request (should be instant, from cache)...");
-// const [value3, err3] = await client.get();
-// console.log("State from cache after call:", value3);
-
-// if (err3) {
-//   console.error("Error in GET request:", err3);
-// }
-
-// // Ждём 6 секунд для того, чтобы кэш истёк
-// console.log("Waiting 6 seconds for cache to expire...");
-// await new Promise((resolve) => setTimeout(resolve, 6000));
-
-// // Вызов get после истечения TTL (должен загрузить состояние из базы)
-// console.log("Fourth GET request (cache expired, should take 2 seconds)...");
-// const [value4, err4] = await client.get();
-// console.log("State after cache expired:", value4);
-
-// if (err4) {
-//   console.error("Error in GET request:", err4);
-// }
-
-// // Вызов resetCounter (сброс счетчика и обновление состояния)
-// console.log("Calling resetCounter...");
-
-// const resetResult = await client.call("resetCounter", []);
-
-// // Проверка состояния после сброса
-// console.log("Fifth GET request (should be instant, from cache)...");
-// const [value5, err5] = await client.get();
-// console.log("State after resetCounter:", value5);
-
-// if (err5) {
-//   console.error("Error in GET request:", err5);
-// }
-
-export const client = new apifly.client<MyApiflyDefinition>({
-  baseURL: "https://light-starfish-82.deno.dev/api/apifly",
-  limiter: {
-    unlimited: true,
-  },
-  headers: {
-    // Здесь вы можете динамически добавлять необходимые заголовки
-    // Например, получаемые из переменных среды или другого места
-    "X-User-ID": "123456789",
-  },
-});
+import { client1 } from "./clients/client1.ts";
+import { client2 } from "./clients/client2.ts";
+// main.ts
 
 function logTime(startTime: number, message: string) {
   const duration = Date.now() - startTime;
@@ -99,96 +11,55 @@ function logTime(startTime: number, message: string) {
 }
 
 async function main() {
-  // Первый GET запрос
-  console.log("First GET request (should take ~2000 ms if cache miss)...");
+  // Клиент 1: Первый GET запрос
+  console.log("Client1: First GET request...");
   let startTime = Date.now();
-  const [value1, err1] = await client.get();
-  logTime(startTime, "First GET request completed");
-  console.log("Initial state:", value1);
+  const [value1, err1] = await client1.get();
+  logTime(startTime, "Client1: First GET request completed");
+  console.log("Client1: Initial state:", value1);
 
-  if (err1) {
-    console.error("Error in GET request:", err1);
-  }
-
-  // Применение PATCH
-  console.log("Applying PATCH to update message and counter...");
+  // Клиент 2: Первый GET запрос
+  console.log("Client2: First GET request...");
   startTime = Date.now();
-  const patchedState = await client.patch({
-    message: "Hello, Apifly!",
-    counter: 5,
+  const [value2, err2] = await client2.get();
+  logTime(startTime, "Client2: First GET request completed");
+  console.log("Client2: Initial state:", value2);
+
+  // Клиент 1: Применение PATCH
+  console.log("Client1: Applying PATCH...");
+  startTime = Date.now();
+  const patchedState1 = await client1.patch({
+    message: "Hello from Client1!",
+    counter: 1,
   });
-  logTime(startTime, "PATCH request completed");
-  console.log("State after PATCH:", patchedState);
+  logTime(startTime, "Client1: PATCH request completed");
+  console.log("Client1: State after PATCH:", patchedState1);
 
-  // Второй GET запрос
-  console.log("Second GET request (should be fast if cache hit)...");
+  // Клиент 2: Применение PATCH
+  console.log("Client2: Applying PATCH...");
   startTime = Date.now();
-  const [value2, err2] = await client.get();
-  logTime(startTime, "Second GET request completed");
-  console.log("State from cache:", value2);
+  const patchedState2 = await client2.patch({
+    message: "Hello from Client2!",
+    counter: 2,
+  });
+  logTime(startTime, "Client2: PATCH request completed");
+  console.log("Client2: State after PATCH:", patchedState2);
 
-  if (err2) {
-    console.error("Error in GET request:", err2);
-  }
-
-  // Вызов процедуры incrementCounter
-  console.log("Calling incrementCounter...");
+  // Клиент 1: Второй GET запрос
+  console.log("Client1: Second GET request...");
   startTime = Date.now();
-  try {
-    const result = await client.call("incrementCounter", [10]);
-    logTime(startTime, "incrementCounter call completed");
-    console.log("Result of incrementCounter:", result);
-  } catch (error) {
-    console.error("Error in incrementCounter:", error);
-  }
+  const [value3, err3] = await client1.get();
+  logTime(startTime, "Client1: Second GET request completed");
+  console.log("Client1: State after PATCH:", value3);
 
-  // Третий GET запрос
-  console.log("Third GET request (should be fast if cache hit)...");
+  // Клиент 2: Второй GET запрос
+  console.log("Client2: Second GET request...");
   startTime = Date.now();
-  const [value3, err3] = await client.get();
-  logTime(startTime, "Third GET request completed");
-  console.log("State after incrementCounter:", value3);
+  const [value4, err4] = await client2.get();
+  logTime(startTime, "Client2: Second GET request completed");
+  console.log("Client2: State after PATCH:", value4);
 
-  if (err3) {
-    console.error("Error in GET request:", err3);
-  }
-
-  // Ждём 6 секунд для истечения кэша
-  console.log("Waiting 6 seconds for cache to expire...");
-  await new Promise((resolve) => setTimeout(resolve, 6000));
-
-  // Четвертый GET запрос после истечения TTL
-  console.log("Fourth GET request (should take ~2000 ms if cache expired)...");
-  startTime = Date.now();
-  const [value4, err4] = await client.get();
-  logTime(startTime, "Fourth GET request completed");
-  console.log("State after cache expired:", value4);
-
-  if (err4) {
-    console.error("Error in GET request:", err4);
-  }
-
-  // Вызов процедуры resetCounter
-  console.log("Calling resetCounter...");
-  startTime = Date.now();
-  try {
-    const result = await client.call("resetCounter", []);
-    logTime(startTime, "resetCounter call completed");
-    console.log("Result of resetCounter:", result);
-  } catch (error) {
-    console.error("Error in resetCounter:", error);
-  }
-
-  // Пятый GET запрос
-  console.log("Fifth GET request (should be fast if cache hit)...");
-  startTime = Date.now();
-  const [value5, err5] = await client.get();
-  logTime(startTime, "Fifth GET request completed");
-  console.log("State after resetCounter:", value5);
-
-  if (err5) {
-    console.error("Error in GET request:", err5);
-  }
+  // Проверяем, что кэширование работает отдельно для каждого клиента
 }
 
 main();
