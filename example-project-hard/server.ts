@@ -1,13 +1,16 @@
-// deno-lint-ignore-file
+// server.ts
+import { Hono } from "@hono/hono";
 import apifly from "../source/mod.ts";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
-import { Hono } from "@hono/hono";
 
 // Наш "эмулятор базы данных"
 let database = {
   state: {
     counter: 0,
     message: "Initial message",
+    user: {
+      tg_id: "123456789",
+    },
   },
 };
 
@@ -24,9 +27,12 @@ async function writeToDatabase(newState: any) {
   database.state = newState;
 }
 
-// Инициализируем сервер Apifly с кэшированием
-const apiflyServer = new apifly.manager<MyApiflyDefinition>(true) // Включаем кэширование
-  .setCacheTTL(5000) // Устанавливаем TTL кэша в 5 секунд
+// Инициализируем ApiflyManager
+const apiflyManager = new apifly.manager<MyApiflyDefinition>(
+  false, // Включаем кэширование
+  5000, // TTL кэша в 5 секунд
+  "user.tg_id", // Указываем поле из состояния для cacheKey
+)
   .load(async (args) => {
     const state = await readFromDatabase();
     return [state, null];
@@ -48,17 +54,18 @@ const apiflyServer = new apifly.manager<MyApiflyDefinition>(true) // Включ�
     return state.message;
   });
 
+// Инициализируем ApiflyServer и указываем базовый путь "/api"
+const apiflyServer = new apifly.server<MyApiflyDefinition>(
+  apiflyManager,
+  "/api/apifly", // Базовый путь для обработки запросов
+);
+
 // Настройка маршрутов Hono
 const server = new Hono();
-const api = new Hono();
 
-api.post("/apifly", async (c) => {
-  const jsonBody = await c.req.json();
-  const response = await apiflyServer.handleRequest(jsonBody, {});
-  return c.json(response);
-});
-
-server.route("/api", api);
+// Регистрируем маршруты ApiflyServer на сервере Hono
+apiflyServer.registerRoutes(server);
 
 // Запуск сервера
+console.log("Server is running on http://localhost:8000");
 Deno.serve(server.fetch);

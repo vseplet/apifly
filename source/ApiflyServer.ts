@@ -1,4 +1,4 @@
-// deno-lint-ignore-file no-unused-vars no-case-declarations
+// ApiflyServer.ts
 import type {
   ApiflyDefinition,
   ApiflyRequest,
@@ -6,27 +6,41 @@ import type {
   InferStateType,
 } from "$types";
 
-import { type Context, Hono } from "@hono/hono";
+import { Hono } from "@hono/hono";
+import type { Context } from "@hono/hono";
 
 import type { ApiflyManager } from "./ApiflyManager.ts";
 
 export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
-  constructor(private manager: ApiflyManager<D>) {}
+  private router: Hono;
 
-  hono(cb: (c: Context) => D["extra"]) {
-    const router = new Hono();
-    router.post(
-      "/apifly",
+  constructor(
+    private manager: ApiflyManager<D>,
+    private basePath: string = "/",
+    private extraCallback: (c: Context) => D["extra"] =
+      () => ({} as D["extra"]),
+  ) {
+    this.router = new Hono();
+
+    this.router.post(
+      this.basePath,
       async (c: Context) => {
-        console.log("Incoming request:", await c.req.json());
+        const requestData = await c.req.json();
+        console.log("Incoming request:", requestData);
         const response = await this.manager.handleRequest(
-          await c.req.json(),
-          cb(c),
+          requestData,
+          this.extraCallback(c),
         );
         console.log("Outgoing response:", response);
         return c.json(response);
       },
     );
-    return router;
+  }
+
+  /**
+   * Регистрирует маршруты на указанном сервере Hono
+   */
+  registerRoutes(server: Hono) {
+    server.route("/", this.router);
   }
 }

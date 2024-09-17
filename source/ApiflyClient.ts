@@ -31,6 +31,7 @@ export class ApiflyClient<
           type: "get",
         }),
       });
+      console.log(response);
       const result = await response.json();
       console.log("Received GET response:", result);
       return [result, null];
