@@ -64,6 +64,12 @@ async function main() {
   const [result2, error2] = await client2.call("incrementCounter", [2]);
   logTime(startTime, "Client2: вызов incrementCounter завершен");
   console.log("Client2: Результат incrementCounter:", result2);
+
+  console.log("Client1: Получение финального состояния...");
+  startTime = Date.now();
+  const [value10, err10] = await client1.get();
+  logTime(startTime, "Client1: Финального GET запрос завершен");
+  console.log("Client1: Финального состояние:", value1);
 }
 
 main();

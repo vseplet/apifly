@@ -31,6 +31,7 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
     console.log("Sending GET request");
     try {
       const response = await this.sendRequest({ type: "get" });
+
       const result = await response.json();
       console.log("Received GET response:", result);
       return [result, null];

@@ -65,7 +65,7 @@ async function writeToDatabase(userId: string, newState: any) {
 
 // Инициализация ApiflyManager с guards, watchers и filters
 const apiflyManager = new apifly.manager<MyApiflyDefinition>(
-  true, // Включаем кэширование
+  false, // Включаем кэширование
   5000, // TTL кэша в миллисекундах
   "userId", // Используем 'userId' из 'extra' как ключ кэша
 )

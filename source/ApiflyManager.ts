@@ -306,12 +306,15 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
    * @returns Кортеж [состояние, ошибка]
    */
   async get(extra: D["extra"]): Promise<[InferStateType<D>, Error | null]> {
-    console.log("Fetching current state from stateLoad...");
+    console.log("Fetching current state...");
 
     const cacheKey = this.getCacheKeyFromExtra(extra);
     const cacheUrl = new URL(
       `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
     );
+
+    let state: InferStateType<D>;
+    let error: Error | null = null;
 
     if (this.cacheEnabled) {
       const cachedResponse = await cache.match(cacheUrl);
@@ -321,7 +324,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
         const now = Date.now();
         if (now - cachedEntry.timestamp < this.cacheTTL) {
           console.log(`✅ Cache HIT for key: ${cacheKey}`);
-          return [cachedEntry.data, null];
+          state = cachedEntry.data;
         } else {
           console.log(`⏰ Cache EXPIRED for key: ${cacheKey}`);
           await cache.delete(cacheUrl);
@@ -333,7 +336,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       console.log("Caching is disabled; loading state from stateLoad.");
     }
 
-    const [state, error] = await this.stateLoad({
+    [state, error] = await this.stateLoad({
       req: { type: "get" },
       ...extra,
     });
@@ -346,7 +349,10 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       await this.updateCache(cacheKey, state);
     }
 
-    return [state, error];
+    console.log("Applying filters...");
+    const filteredState = this.applyFilters(state, extra);
+
+    return [filteredState, error];
   }
 
   /**
@@ -380,9 +386,6 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     const newState = { ...currentState, ...patch };
 
-    console.log("Applying filters...");
-    const filteredState = this.applyFilters(newState, extra);
-
     console.log("Saving new state...");
     const unloadError = await this.stateUnload({
       state: newState,
@@ -399,11 +402,14 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       await this.updateCache(cacheKey, newState);
     }
 
+    console.log("Applying filters...");
+    const filteredState = this.applyFilters(newState, extra);
+
     console.log("Running watchers...");
     const updatedFields = this.getUpdatedFields(currentState, newState);
     await this.applyWatchers(updatedFields, newState, extra);
 
-    return { state: newState, error: null };
+    return { state: filteredState, error: null };
   }
 
   /**
@@ -436,9 +442,6 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     const newState = currentState; // Предполагается, что процедура изменяет состояние напрямую
 
-    console.log("Applying filters...");
-    const filteredState = this.applyFilters(newState, extra);
-
     console.log("Saving new state...");
     const unloadError = await this.stateUnload({
       state: newState,
@@ -454,6 +457,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     if (this.cacheEnabled) {
       await this.updateCache(cacheKey, newState);
     }
+
+    console.log("Applying filters...");
+    const filteredState = this.applyFilters(newState, extra);
 
     console.log("Running watchers...");
     const updatedFields = this.getUpdatedFields(previousState, newState);
@@ -584,21 +590,28 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     console.log("Applying filters to state...");
     const filteredState = { ...state };
 
-    for (const key in state) {
-      const filter = this.getNestedValue(this.filtersList, key);
-      if (typeof filter === "function") {
-        const shouldKeep = filter({
-          currentValue: state[key],
-          state,
-          ...extra,
-        });
+    const traverse = (obj: any, path: string = "") => {
+      for (const key in obj) {
+        const fullPath = path ? `${path}.${key}` : key;
+        const filter = this.getNestedValue(this.filtersList, fullPath);
+        if (typeof filter === "function") {
+          const shouldKeep = filter({
+            currentValue: obj[key],
+            state,
+            ...extra,
+          });
 
-        if (!shouldKeep) {
-          console.log(`Removing key from state: ${key}`);
-          delete filteredState[key];
+          if (!shouldKeep) {
+            console.log(`Removing key from state: ${fullPath}`);
+            delete obj[key];
+          }
+        } else if (typeof obj[key] === "object" && obj[key] !== null) {
+          traverse(obj[key], fullPath);
         }
       }
-    }
+    };
+
+    traverse(filteredState);
 
     return filteredState;
   }
@@ -615,18 +628,26 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     extra: D["extra"],
   ): Promise<void> {
     console.log("Applying watchers...");
-    for (const key in updatedFields) {
-      const watcher = this.getNestedValue(this.watchersList, key);
-      if (typeof watcher === "function") {
-        console.log(`Running watcher for key: ${key}`);
-        await watcher({
-          currentValue: newState[key],
-          newValue: updatedFields[key],
-          state: newState,
-          ...extra,
-        });
+
+    const traverse = async (obj: any, path: string = "") => {
+      for (const key in obj) {
+        const fullPath = path ? `${path}.${key}` : key;
+        const watcher = this.getNestedValue(this.watchersList, fullPath);
+        if (typeof watcher === "function") {
+          console.log(`Running watcher for key: ${fullPath}`);
+          await watcher({
+            currentValue: newState[key],
+            newValue: obj[key],
+            state: newState,
+            ...extra,
+          });
+        } else if (typeof obj[key] === "object" && obj[key] !== null) {
+          await traverse(obj[key], fullPath);
+        }
       }
-    }
+    };
+
+    await traverse(updatedFields);
   }
 
   /**
