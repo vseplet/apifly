@@ -6,8 +6,8 @@ import type {
   InferStateType,
 } from "$types";
 
-import { Hono } from "@hono/hono";
-import type { Context } from "@hono/hono";
+import { Hono } from "jsr:@hono/hono";
+import type { Context } from "jsr:@hono/hono";
 
 import type { ApiflyManager } from "./ApiflyManager.ts";
 
