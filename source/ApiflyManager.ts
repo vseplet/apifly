@@ -301,6 +301,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   /**
    * Получает состояние, используя кэширование при необходимости
    */
+
   async get(extra: D["extra"]): Promise<[InferStateType<D>, Error | null]> {
     console.log("Fetching current state from stateLoad...");
     const [state, error] = await this.stateLoad({
@@ -316,7 +317,11 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     if (this.cacheEnabled) {
       console.log(`CacheKey: ${cacheKey}`);
-      const cachedResponse = await cache.match(cacheKey);
+      // Создаем валидный URL, используя cacheKey
+      const cacheUrl = new URL(
+        `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
+      );
+      const cachedResponse = await cache.match(cacheUrl);
       if (cachedResponse) {
         console.log(`Returning cached state for key: ${cacheKey}`);
         const cachedData = await cachedResponse.json();
@@ -329,7 +334,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
             "Cache-Control": `max-age=${this.cacheTTL / 1000}`,
           },
         });
-        await cache.put(cacheKey, response);
+        await cache.put(cacheUrl, response);
         console.log(`State cached with key: ${cacheKey}`);
       }
     }
@@ -388,10 +393,16 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     // Сбрасываем старый кэш
     if (this.cacheEnabled) {
-      await cache.delete(oldCacheKey);
+      const oldCacheUrl = new URL(
+        `https://cache.example.com/${encodeURIComponent(oldCacheKey)}`,
+      );
+      await cache.delete(oldCacheUrl);
       console.log(`Cache cleared for old key: ${oldCacheKey}`);
       if (newCacheKey !== oldCacheKey) {
-        await cache.delete(newCacheKey);
+        const newCacheUrl = new URL(
+          `https://cache.example.com/${encodeURIComponent(newCacheKey)}`,
+        );
+        await cache.delete(newCacheUrl);
         console.log(`Cache cleared for new key: ${newCacheKey}`);
       }
     }
@@ -446,10 +457,16 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     // Сбрасываем кэш
     if (this.cacheEnabled) {
-      await cache.delete(oldCacheKey);
+      const oldCacheUrl = new URL(
+        `https://cache.example.com/${encodeURIComponent(oldCacheKey)}`,
+      );
+      await cache.delete(oldCacheUrl);
       console.log(`Cache cleared for old key: ${oldCacheKey}`);
       if (newCacheKey !== oldCacheKey) {
-        await cache.delete(newCacheKey);
+        const newCacheUrl = new URL(
+          `https://cache.example.com/${encodeURIComponent(newCacheKey)}`,
+        );
+        await cache.delete(newCacheUrl);
         console.log(`Cache cleared for new key: ${newCacheKey}`);
       }
     }
