@@ -1,4 +1,5 @@
-// deno-lint-ignore-file require-await no-explicit-any
+// ApiflyClient.ts
+
 import type {
   ApiflyDefinition,
   ApiflyPatch,
@@ -7,20 +8,22 @@ import type {
   InferRpcListReturns,
   InferStateType,
 } from "$types";
-// import fetchify from "jsr​:​@vseplet/fetchify​";
 import fetchify from "jsr:@vseplet/fetchify";
-
 import type { Fetchify } from "jsr:/@vseplet/fetchify@0.3.20/Fetchify";
 import type { IFetchifyConfig } from "jsr:/@vseplet/fetchify@0.3.20/types";
-export class ApiflyClient<
-  D extends ApiflyDefinition<any, any>,
-> {
+
+export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
   private fetchify: Fetchify;
 
-  constructor(
-    fetchifyConfig?: IFetchifyConfig,
-  ) {
+  constructor(fetchifyConfig?: IFetchifyConfig) {
     this.fetchify = fetchify.create(fetchifyConfig);
+  }
+
+  private async sendRequest(body: any): Promise<Response> {
+    return await this.fetchify.post("", {
+      body: JSON.stringify(body),
+      // Заголовки уже будут включены из конфигурации fetchify
+    });
   }
 
   async get(): Promise<
@@ -28,12 +31,7 @@ export class ApiflyClient<
   > {
     console.log("Sending GET request");
     try {
-      const response = await this.fetchify.post("", {
-        body: JSON.stringify({
-          type: "get",
-        }),
-      });
-      console.log(response);
+      const response = await this.sendRequest({ type: "get" });
       const result = await response.json();
       console.log("Received GET response:", result);
       return [result, null];
@@ -48,11 +46,9 @@ export class ApiflyClient<
   ): Promise<ApiflyResponse<InferStateType<D>>> {
     console.log("Sending PATCH request with patch:", patch);
     try {
-      const response = await this.fetchify.post("", {
-        body: JSON.stringify({
-          type: "patch",
-          patch,
-        }),
+      const response = await this.sendRequest({
+        type: "patch",
+        patch,
       });
       const result = await response.json();
       console.log("Received PATCH response:", result);
@@ -72,11 +68,9 @@ export class ApiflyClient<
       args,
     );
     try {
-      const response = await this.fetchify.post("", {
-        body: JSON.stringify({
-          type: "call",
-          calls: [{ name, args }],
-        }),
+      const response = await this.sendRequest({
+        type: "call",
+        calls: [{ name, args }],
       });
 
       const result = await response.json();
@@ -84,9 +78,12 @@ export class ApiflyClient<
         `Received CALL response for procedure ${String(name)}:`,
         result,
       );
-      return result;
+      return result.returns[name];
     } catch (error) {
-      console.error(`CALL request error for procedure ${String(name)}:`, error);
+      console.error(
+        `CALL request error for procedure ${String(name)}:`,
+        error,
+      );
       throw new Error(`Failed to call procedure ${String(name)}`);
     }
   }

@@ -263,13 +263,12 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   /**
    * Получает значение cacheKey из состояния
    */
-  private getCacheKeyFromState(state: InferStateType<D>): string {
+  private getCacheKeyFromExtra(extra: D["extra"]): string {
     if (!this.cacheKeyField) {
       return "default";
     }
 
-    // Используем getValueByPath для получения значения
-    const cacheKeyValue = this.getValueByPath(state, this.cacheKeyField);
+    const cacheKeyValue = extra[this.cacheKeyField as keyof D["extra"]];
     if (cacheKeyValue === undefined || cacheKeyValue === null) {
       console.warn(
         `Cache key value is undefined or null for field: ${this.cacheKeyField}`,
@@ -279,24 +278,24 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     return String(cacheKeyValue);
   }
 
-  /**
-   * Рекурсивно получает значение по пути ключей
-   */
-  private getValueByPath<T, K extends string>(
-    obj: T,
-    path: K,
-  ): GetValueByKey<T, K> | undefined {
-    const parts = path.split(".");
-    let current: any = obj;
-    for (const part of parts) {
-      if (current && typeof current === "object" && part in current) {
-        current = current[part];
-      } else {
-        return undefined;
-      }
-    }
-    return current;
-  }
+  // /**
+  //  * Рекурсивно получает значение по пути ключей
+  //  */
+  // private getValueByPath<T, K extends string>(
+  //   obj: T,
+  //   path: K,
+  // ): GetValueByKey<T, K> | undefined {
+  //   const parts = path.split(".");
+  //   let current: any = obj;
+  //   for (const part of parts) {
+  //     if (current && typeof current === "object" && part in current) {
+  //       current = current[part];
+  //     } else {
+  //       return undefined;
+  //     }
+  //   }
+  //   return current;
+  // }
 
   /**
    * Получает состояние, используя кэширование при необходимости
@@ -304,6 +303,24 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   async get(extra: D["extra"]): Promise<[InferStateType<D>, Error | null]> {
     console.log("Fetching current state from stateLoad...");
+
+    const cacheKey = this.getCacheKeyFromExtra(extra);
+    const cacheUrl = new URL(
+      `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
+    );
+
+    if (this.cacheEnabled) {
+      const cachedResponse = await cache.match(cacheUrl);
+      if (cachedResponse) {
+        console.log(`✅ Cache HIT for key: ${cacheKey}`);
+        const cachedData = await cachedResponse.json();
+        return [cachedData as InferStateType<D>, null];
+      } else {
+        console.log(`❌ Cache MISS for key: ${cacheKey}`);
+      }
+    }
+
+    // Если нет кэша или кэширование отключено
     const [state, error] = await this.stateLoad({
       req: { type: "get" },
       ...extra,
@@ -313,30 +330,16 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return [state, error];
     }
 
-    const cacheKey = this.getCacheKeyFromState(state);
-
+    // Кэшируем состояние
     if (this.cacheEnabled) {
-      console.log(`CacheKey: ${cacheKey}`);
-      // Создаем валидный URL, используя cacheKey
-      const cacheUrl = new URL(
-        `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
-      );
-      const cachedResponse = await cache.match(cacheUrl);
-      if (cachedResponse) {
-        console.log(`Returning cached state for key: ${cacheKey}`);
-        const cachedData = await cachedResponse.json();
-        return [cachedData as InferStateType<D>, null];
-      } else {
-        // Кэшируем состояние
-        const response = new Response(JSON.stringify(state), {
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": `max-age=${this.cacheTTL / 1000}`,
-          },
-        });
-        await cache.put(cacheUrl, response);
-        console.log(`State cached with key: ${cacheKey}`);
-      }
+      const response = new Response(JSON.stringify(state), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": `max-age=${this.cacheTTL / 1000}`,
+        },
+      });
+      await cache.put(cacheUrl, response);
+      console.log(`🔐 State cached with key: ${cacheKey}`);
     }
 
     return [state, error];
@@ -359,7 +362,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return { state: {}, error: loadError };
     }
 
-    const oldCacheKey = this.getCacheKeyFromState(currentState);
+    const oldCacheKey = this.getCacheKeyFromExtra(extra);
 
     console.log("Applying guards...");
     const [canProceed, guardError] = this.applyGuards(
@@ -375,7 +378,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     // Применяем патч к текущему состоянию
     const newState = { ...currentState, ...patch };
 
-    const newCacheKey = this.getCacheKeyFromState(newState);
+    const newCacheKey = this.getCacheKeyFromExtra(extra);
 
     console.log("Applying filters...");
     const filteredState = this.applyFilters(newState, extra);
@@ -420,6 +423,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   async call<N extends keyof D["rpc"]>(
     name: N,
     args: D["rpc"][N]["args"],
+    extra: D["extra"],
   ): Promise<[D["rpc"][N]["returns"], Error | null]> {
     console.log(`Calling procedure: ${String(name)} with args:`, args);
 
@@ -428,7 +432,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       throw new Error("Failed to load state");
     }
 
-    const oldCacheKey = this.getCacheKeyFromState(currentState);
+    const oldCacheKey = this.getCacheKeyFromExtra(extra);
 
     const procedure = this.procedures[name];
     if (!procedure) {
@@ -453,7 +457,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return [result, unloadError];
     }
 
-    const newCacheKey = this.getCacheKeyFromState(newState);
+    const newCacheKey = this.getCacheKeyFromExtra(extra);
 
     // Сбрасываем кэш
     if (this.cacheEnabled) {
@@ -508,6 +512,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
           const [result, error] = await this.call(
             call.name as keyof D["rpc"],
             call.args,
+            extra,
           );
 
           const [state, stateError] = await this.get(extra);

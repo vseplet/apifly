@@ -57,7 +57,17 @@ const apiflyManager = new apifly.manager<MyApiflyDefinition>(
 // Инициализируем ApiflyServer и указываем базовый путь "/api"
 const apiflyServer = new apifly.server<MyApiflyDefinition>(
   apiflyManager,
-  "/api/apifly", // Базовый путь для обработки запросов
+  "/api/apifly", // Базовый путь
+  (c) => {
+    // Извлекаем заголовки
+    const userId = c.req.header("X-User-ID") || "default";
+
+    // Возвращаем extra данные
+    return {
+      userId,
+      // Другие данные по необходимости
+    } as MyApiflyDefinition["extra"];
+  },
 );
 
 // Настройка маршрутов Hono
