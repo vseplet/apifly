@@ -166,6 +166,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
 
     target[keyParts[keyParts.length - 1]] = predicate;
+    return this;
   }
 
   /**
@@ -194,6 +195,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
 
     target[keyParts[keyParts.length - 1]] = callback;
+    return this;
   }
 
   /**
@@ -222,6 +224,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
 
     target[keyParts[keyParts.length - 1]] = predicate;
+    return this;
   }
 
   /**
