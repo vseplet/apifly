@@ -1,5 +1,4 @@
 // ApiflyManager.ts
-// deno-lint-ignore-file no-unused-vars no-explicit-any
 import type {
   ApiflyDefinition,
   ApiflyFilter,
@@ -11,13 +10,13 @@ import type {
   ApiflyResponse,
   ApiflyWatcher,
   ApiflyWatchers,
+  CacheEntry,
   GetValueByKey,
   InferStateType,
   NestedKeyOf,
 } from "$types";
 
 // Импортируем Deno Cache API
-// Убедитесь, что ваше окружение поддерживает Deno Cache API
 const cache = await caches.open("apifly-cache");
 
 export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
@@ -46,8 +45,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   /**
    * Устанавливает TTL (время жизни) кэша в миллисекундах
    * @param ttl Время в миллисекундах после которого кэш должен истечь
+   * @returns Текущий экземпляр ApiflyManager для цепочного вызова методов
    */
-  setCacheTTL(ttl: number) {
+  setCacheTTL(ttl: number): this {
     this.cacheTTL = ttl;
     console.log(`Cache TTL set to ${ttl}ms`);
     return this;
@@ -55,16 +55,18 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Проверяет, включено ли кэширование
+   * @returns true, если кэширование включено; иначе false
    */
   isCacheEnabled(): boolean {
     return this.cacheEnabled;
   }
 
   /**
-   * Устанавливает включение или отключение кэширования
+   * Включает или отключает кэширование
    * @param enabled Булевое значение для включения или отключения кэширования
+   * @returns Текущий экземпляр ApiflyManager для цепочного вызова методов
    */
-  setCacheEnabled(enabled: boolean) {
+  setCacheEnabled(enabled: boolean): this {
     this.cacheEnabled = enabled;
     console.log(`Caching is ${this.cacheEnabled ? "enabled" : "disabled"}`);
     return this;
@@ -73,7 +75,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   /**
    * Добавляет guards
    * @param guards Guards для добавления
-   * @returns Инстанс ApiflyManager
+   * @returns Текущий экземпляр ApiflyManager для цепочного вызова методов
    */
   guards(
     guards: ApiflyGuards<D["extra"], InferStateType<D>>,
@@ -86,7 +88,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   /**
    * Добавляет watchers
    * @param watchers Watchers для добавления
-   * @returns Инстанс ApiflyManager
+   * @returns Текущий экземпляр ApiflyManager для цепочного вызова методов
    */
   watchers(
     watchers: ApiflyWatchers<D["extra"], InferStateType<D>>,
@@ -99,9 +101,11 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   /**
    * Добавляет filters
    * @param filters Filters для добавления
-   * @returns Инстанс ApiflyManager
+   * @returns Текущий экземпляр ApiflyManager для цепочного вызова методов
    */
-  filters(filters: ApiflyFilters<D["extra"], InferStateType<D>>) {
+  filters(
+    filters: ApiflyFilters<D["extra"], InferStateType<D>>,
+  ): ApiflyManager<D> {
     console.log("Adding filters:", filters);
     this.filtersList = filters;
     return this;
@@ -138,6 +142,8 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Добавляет guard
+   * @param key Ключ, к которому применяется guard
+   * @param predicate Функция-предикат для проверки значения
    */
   guard<K extends NestedKeyOf<InferStateType<D>>>(
     key: K,
@@ -164,6 +170,8 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Добавляет watcher
+   * @param key Ключ, к которому применяется watcher
+   * @param callback Функция обратного вызова при изменении значения
    */
   watcher<K extends NestedKeyOf<InferStateType<D>>>(
     key: K,
@@ -190,6 +198,8 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Добавляет filter
+   * @param key Ключ, к которому применяется filter
+   * @param predicate Функция-предикат для фильтрации значения
    */
   filter<K extends NestedKeyOf<InferStateType<D>>>(
     key: K,
@@ -216,6 +226,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Добавляет процедуру
+   * @param name Имя процедуры
+   * @param handler Функция-обработчик процедуры
+   * @returns Текущий экземпляр ApiflyManager для цепочного вызова методов
    */
   procedure<N extends keyof D["rpc"]>(
     name: N,
@@ -232,7 +245,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   }
 
   /**
-   * Загружает состояние
+   * Устанавливает функцию загрузки состояния
+   * @param cb Функция загрузки состояния
+   * @returns Текущий экземпляр ApiflyManager для цепочного вызова методов
    */
   load(
     cb: (
@@ -245,7 +260,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   }
 
   /**
-   * Сохраняет состояние
+   * Устанавливает функцию сохранения состояния
+   * @param cb Функция сохранения состояния
+   * @returns Текущий экземпляр ApiflyManager для цепочного вызова методов
    */
   unload(
     cb: (
@@ -261,7 +278,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   }
 
   /**
-   * Получает значение cacheKey из состояния
+   * Получает значение ключа кэша из extra
+   * @param extra Дополнительные данные
+   * @returns Значение ключа кэша в виде строки
    */
   private getCacheKeyFromExtra(extra: D["extra"]): string {
     if (!this.cacheKeyField) {
@@ -278,29 +297,11 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     return String(cacheKeyValue);
   }
 
-  // /**
-  //  * Рекурсивно получает значение по пути ключей
-  //  */
-  // private getValueByPath<T, K extends string>(
-  //   obj: T,
-  //   path: K,
-  // ): GetValueByKey<T, K> | undefined {
-  //   const parts = path.split(".");
-  //   let current: any = obj;
-  //   for (const part of parts) {
-  //     if (current && typeof current === "object" && part in current) {
-  //       current = current[part];
-  //     } else {
-  //       return undefined;
-  //     }
-  //   }
-  //   return current;
-  // }
-
   /**
    * Получает состояние, используя кэширование при необходимости
+   * @param extra Дополнительные данные
+   * @returns Кортеж [состояние, ошибка]
    */
-
   async get(extra: D["extra"]): Promise<[InferStateType<D>, Error | null]> {
     console.log("Fetching current state from stateLoad...");
 
@@ -312,15 +313,21 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     if (this.cacheEnabled) {
       const cachedResponse = await cache.match(cacheUrl);
       if (cachedResponse) {
-        console.log(`✅ Cache HIT for key: ${cacheKey}`);
-        const cachedData = await cachedResponse.json();
-        return [cachedData as InferStateType<D>, null];
+        const cachedEntry: CacheEntry<InferStateType<D>> = await cachedResponse
+          .json();
+        const now = Date.now();
+        if (now - cachedEntry.timestamp < this.cacheTTL) {
+          console.log(`✅ Cache HIT for key: ${cacheKey}`);
+          return [cachedEntry.data, null];
+        } else {
+          console.log(`⏰ Cache EXPIRED for key: ${cacheKey}`);
+          await cache.delete(cacheUrl);
+        }
       } else {
         console.log(`❌ Cache MISS for key: ${cacheKey}`);
       }
     }
 
-    // Если нет кэша или кэширование отключено
     const [state, error] = await this.stateLoad({
       req: { type: "get" },
       ...extra,
@@ -330,12 +337,15 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return [state, error];
     }
 
-    // Кэшируем состояние
     if (this.cacheEnabled) {
-      const response = new Response(JSON.stringify(state), {
+      const cacheEntry: CacheEntry<InferStateType<D>> = {
+        data: state,
+        timestamp: Date.now(),
+      };
+
+      const response = new Response(JSON.stringify(cacheEntry), {
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": `max-age=${this.cacheTTL / 1000}`,
         },
       });
       await cache.put(cacheUrl, response);
@@ -347,21 +357,21 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Применяет патч к состоянию и обновляет кэш
+   * @param patch Патч для применения к состоянию
+   * @param extra Дополнительные данные
+   * @returns Ответ ApiflyResponse с новым состоянием или ошибкой
    */
-  // Внутри класса ApiflyManager
-
   async patch(
     patch: ApiflyPatch<InferStateType<D>>,
     extra: D["extra"],
   ): Promise<ApiflyResponse<InferStateType<D>>> {
     console.log("Applying patch:", patch);
+
     const [currentState, loadError] = await this.get(extra);
     if (loadError) {
       console.error("Error loading state:", loadError);
       return { state: {}, error: loadError };
     }
-
-    const oldCacheKey = this.getCacheKeyFromExtra(extra);
 
     console.log("Applying guards...");
     const [canProceed, guardError] = this.applyGuards(
@@ -374,10 +384,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return { state: currentState, error: guardError?.message! };
     }
 
-    // Применяем патч к текущему состоянию
     const newState = { ...currentState, ...patch };
-
-    const newCacheKey = this.getCacheKeyFromExtra(extra);
 
     console.log("Applying filters...");
     const filteredState = this.applyFilters(newState, extra);
@@ -393,21 +400,8 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return { state: currentState, error: unloadError };
     }
 
-    // Обновляем кэш новым состоянием
-    if (this.cacheEnabled) {
-      const cacheUrl = new URL(
-        `https://cache.example.com/${encodeURIComponent(newCacheKey)}`,
-      );
-
-      const response = new Response(JSON.stringify(newState), {
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": `max-age=${this.cacheTTL / 1000}`,
-        },
-      });
-      await cache.put(cacheUrl, response);
-      console.log(`🔐 State cached with key: ${newCacheKey}`);
-    }
+    const cacheKey = this.getCacheKeyFromExtra(extra);
+    await this.updateCache(cacheKey, newState);
 
     console.log("Running watchers...");
     const updatedFields = this.getUpdatedFields(currentState, newState);
@@ -418,6 +412,10 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Выполняет процедуру и обновляет кэш
+   * @param name Имя процедуры
+   * @param args Аргументы процедуры
+   * @param extra Дополнительные данные
+   * @returns Кортеж [результат процедуры, ошибка]
    */
   async call<N extends keyof D["rpc"]>(
     name: N,
@@ -431,8 +429,6 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       throw new Error("Failed to load state");
     }
 
-    const oldCacheKey = this.getCacheKeyFromExtra(extra);
-
     const procedure = this.procedures[name];
     if (!procedure) {
       throw new Error(`Procedure ${String(name)} not found`);
@@ -442,10 +438,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     const result = await procedure(args, currentState);
 
-    // Новое состояние после выполнения процедуры
     const newState = currentState; // Предполагается, что процедура изменяет состояние напрямую
-
-    const newCacheKey = this.getCacheKeyFromExtra(extra);
 
     console.log("Applying filters...");
     const filteredState = this.applyFilters(newState, extra);
@@ -461,21 +454,8 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return [result, unloadError];
     }
 
-    // Обновляем кэш новым состоянием
-    if (this.cacheEnabled) {
-      const cacheUrl = new URL(
-        `https://cache.example.com/${encodeURIComponent(newCacheKey)}`,
-      );
-
-      const response = new Response(JSON.stringify(newState), {
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": `max-age=${this.cacheTTL / 1000}`,
-        },
-      });
-      await cache.put(cacheUrl, response);
-      console.log(`🔐 State cached with key: ${newCacheKey}`);
-    }
+    const cacheKey = this.getCacheKeyFromExtra(extra);
+    await this.updateCache(cacheKey, newState);
 
     console.log("Running watchers...");
     const updatedFields = this.getUpdatedFields(previousState, newState);
@@ -486,6 +466,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Обрабатывает запрос (get, patch, call)
+   * @param req Запрос ApiflyRequest
+   * @param extra Дополнительные данные
+   * @returns Ответ ApiflyResponse с состоянием и ошибкой, если есть
    */
   async handleRequest(
     req: ApiflyRequest<InferStateType<D>>,
@@ -537,6 +520,12 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
   }
 
+  /**
+   * Получает обновленные поля состояния
+   * @param previousState Предыдущее состояние
+   * @param newState Новое состояние
+   * @returns Патч с обновленными полями
+   */
   private getUpdatedFields(
     previousState: InferStateType<D>,
     newState: InferStateType<D>,
@@ -554,6 +543,10 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Применяет guards к патчу
+   * @param patch Патч для применения
+   * @param currentState Текущее состояние
+   * @param extra Дополнительные данные
+   * @returns Кортеж [можно ли продолжить, ошибка]
    */
   private applyGuards(
     patch: ApiflyPatch<InferStateType<D>>,
@@ -582,6 +575,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Применяет filters к состоянию
+   * @param state Текущее состояние
+   * @param extra Дополнительные данные
+   * @returns Отфильтрованное состояние
    */
   private applyFilters(
     state: InferStateType<D>,
@@ -610,7 +606,10 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   }
 
   /**
-   * Применяет watchers к обновлённым полям
+   * Применяет watchers к обновленным полям
+   * @param updatedFields Обновленные поля
+   * @param newState Новое состояние
+   * @param extra Дополнительные данные
    */
   private async applyWatchers(
     updatedFields: ApiflyPatch<InferStateType<D>>,
@@ -633,7 +632,10 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   }
 
   /**
-   * Вспомогательный метод для получения значения из вложенных объектов по пути ключей
+   * Получает значение из вложенного объекта по пути
+   * @param obj Объект
+   * @param path Путь к значению
+   * @returns Значение или undefined
    */
   private getNestedValue(obj: any, path: string): any {
     const keys = path.split(".");
@@ -646,5 +648,34 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       }
     }
     return current;
+  }
+
+  /**
+   * Обновляет кэш с новым состоянием
+   * @param cacheKey Ключ кэша
+   * @param state Новое состояние
+   */
+  private async updateCache(
+    cacheKey: string,
+    state: InferStateType<D>,
+  ) {
+    if (this.cacheEnabled) {
+      const cacheUrl = new URL(
+        `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
+      );
+
+      const cacheEntry: CacheEntry<InferStateType<D>> = {
+        data: state,
+        timestamp: Date.now(),
+      };
+
+      const response = new Response(JSON.stringify(cacheEntry), {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      await cache.put(cacheUrl, response);
+      console.log(`🔄 Cache updated for key: ${cacheKey}`);
+    }
   }
 }
