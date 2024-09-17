@@ -20,7 +20,6 @@ export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
         const requestData = await c.req.json();
         console.log("Incoming request:", requestData);
 
-        // Извлекаем extra данные из заголовков
         const extra = this.extractExtraFromHeaders(c);
 
         const response = await this.manager.handleRequest(

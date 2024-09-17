@@ -326,6 +326,8 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       } else {
         console.log(`❌ Cache MISS for key: ${cacheKey}`);
       }
+    } else {
+      console.log("Caching is disabled; loading state from stateLoad.");
     }
 
     const [state, error] = await this.stateLoad({
@@ -338,18 +340,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
 
     if (this.cacheEnabled) {
-      const cacheEntry: CacheEntry<InferStateType<D>> = {
-        data: state,
-        timestamp: Date.now(),
-      };
-
-      const response = new Response(JSON.stringify(cacheEntry), {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      await cache.put(cacheUrl, response);
-      console.log(`🔐 State cached with key: ${cacheKey}`);
+      await this.updateCache(cacheKey, state);
     }
 
     return [state, error];
@@ -401,7 +392,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
 
     const cacheKey = this.getCacheKeyFromExtra(extra);
-    await this.updateCache(cacheKey, newState);
+    if (this.cacheEnabled) {
+      await this.updateCache(cacheKey, newState);
+    }
 
     console.log("Running watchers...");
     const updatedFields = this.getUpdatedFields(currentState, newState);
@@ -455,7 +448,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
 
     const cacheKey = this.getCacheKeyFromExtra(extra);
-    await this.updateCache(cacheKey, newState);
+    if (this.cacheEnabled) {
+      await this.updateCache(cacheKey, newState);
+    }
 
     console.log("Running watchers...");
     const updatedFields = this.getUpdatedFields(previousState, newState);
@@ -676,6 +671,23 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       });
       await cache.put(cacheUrl, response);
       console.log(`🔄 Cache updated for key: ${cacheKey}`);
+    }
+  }
+
+  /**
+   * Инвалидирует (сбрасывает) кэш для заданного ключа
+   * @param extra Дополнительные данные для вычисления cacheKey
+   */
+  async invalidateCache(extra: D["extra"]): Promise<void> {
+    if (this.cacheEnabled) {
+      const cacheKey = this.getCacheKeyFromExtra(extra);
+      const cacheUrl = new URL(
+        `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
+      );
+      await cache.delete(cacheUrl);
+      console.log(`🗑️ Cache invalidated for key: ${cacheKey}`);
+    } else {
+      console.log("Caching is disabled; nothing to invalidate.");
     }
   }
 }

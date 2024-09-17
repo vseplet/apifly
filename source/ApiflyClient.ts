@@ -22,7 +22,6 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
   private async sendRequest(body: any): Promise<Response> {
     return await this.fetchify.post("", {
       body: JSON.stringify(body),
-      // Заголовки уже будут включены из конфигурации fetchify
     });
   }
 
