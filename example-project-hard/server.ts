@@ -59,7 +59,9 @@ async function readFromDatabase(userId: string) {
 }
 
 async function writeToDatabase(userId: string, newState: any) {
-  console.log(`Writing state for userId: ${userId}`);
+  console.log(
+    `Writing state: ${JSON.stringify(newState, null, 2)} for userId: ${userId}`,
+  );
   database[userId] = newState;
 }
 
@@ -80,6 +82,7 @@ const apiflyManager = new apifly.manager<MyApiflyDefinition>(
     return null;
   })
   .procedure("incrementCounter", async (args, state) => {
+    console.log(`В процедуре state: ${JSON.stringify(state, null, 2)}`);
     const [amount] = args;
     state.counter += amount;
     return `Counter incremented by ${amount}, new value: ${state.counter}`;
@@ -122,7 +125,7 @@ const apiflyServer = new apifly.server<MyApiflyDefinition>(
 // Настройка сервера Hono
 const server = new Hono();
 
-// Регистрация маршрутов
+//@ts-ignore
 apiflyServer.registerRoutes(server);
 
 // Запуск сервера

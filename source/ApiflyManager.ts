@@ -22,12 +22,12 @@ const cache = await caches.open("apifly-cache");
 export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   private cacheEnabled: boolean;
   private cacheTTL: number; // В миллисекундах
-  private cacheKeyField?: NestedKeyOf<InferStateType<D>>;
+  private cacheKeyField?: string;
 
   constructor(
     cacheEnabled: boolean = false,
     cacheTTL: number = 60000,
-    cacheKeyField?: NestedKeyOf<InferStateType<D>>,
+    cacheKeyField?: string,
   ) {
     this.cacheEnabled = cacheEnabled;
     this.cacheTTL = cacheTTL;
@@ -238,11 +238,11 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     handler: (
       args: D["rpc"][N]["args"],
       state: InferStateType<D>,
-    ) => Promise<D["rpc"][N]["returns"]>,
+    ) => Promise<D["rpc"][N]["returns"]>, // Возвращаем и стейт, и результат
   ): ApiflyManager<D> {
     console.log(`Adding procedure: ${String(name)}`);
     this.procedures[name] = async (args: any, state: InferStateType<D>) => {
-      return await handler(args, state);
+      return await handler(args, state); // Возвращаем [новый стейт, результат]
     };
     return this;
   }
@@ -367,12 +367,12 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   ): Promise<ApiflyResponse<InferStateType<D>>> {
     console.log("Applying patch:", patch);
 
-    const [currentState, loadError] = await this.get(extra);
+    const [currentState, loadError] = await this.loadRawState(extra);
     if (loadError) {
       console.error("Error loading state:", loadError);
       return { state: {}, error: loadError };
     }
-
+    const oldState = { ...currentState };
     console.log("Applying guards...");
     const [canProceed, guardError] = this.applyGuards(
       patch,
@@ -406,10 +406,67 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     const filteredState = this.applyFilters(newState, extra);
 
     console.log("Running watchers...");
-    const updatedFields = this.getUpdatedFields(currentState, newState);
-    await this.applyWatchers(updatedFields, newState, extra);
+    await this.applyWatchers(newState, oldState, extra);
 
     return { state: filteredState, error: null };
+  }
+
+  /**
+   * Выполняет процедуру и обновляет кэш
+   * @param name Имя процедуры
+   * @param args Аргументы процедуры
+   * @param extra Дополнительные данные
+   * @returns Кортеж [результат процедуры, ошибка]
+   */
+
+  /**
+   * Получает состояние без применения фильтров
+   * @param extra Дополнительные данные
+   * @returns Кортеж [состояние, ошибка]
+   */
+  private async loadRawState(
+    extra: D["extra"],
+  ): Promise<[InferStateType<D>, Error | null]> {
+    console.log("Fetching raw state...");
+
+    const cacheKey = this.getCacheKeyFromExtra(extra);
+    const cacheUrl = new URL(
+      `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
+    );
+
+    let state: InferStateType<D>;
+    let error: Error | null = null;
+
+    if (this.cacheEnabled) {
+      const cachedResponse = await cache.match(cacheUrl);
+      if (cachedResponse) {
+        const cachedEntry: CacheEntry<InferStateType<D>> = await cachedResponse
+          .json();
+        const now = Date.now();
+        if (now - cachedEntry.timestamp < this.cacheTTL) {
+          console.log(`✅ Cache HIT for key: ${cacheKey}`);
+          state = cachedEntry.data;
+        } else {
+          console.log(`⏰ Cache EXPIRED for key: ${cacheKey}`);
+          await cache.delete(cacheUrl);
+        }
+      } else {
+        console.log(`❌ Cache MISS for key: ${cacheKey}`);
+      }
+    } else {
+      console.log("Caching is disabled; loading state from stateLoad.");
+    }
+
+    [state, error] = await this.stateLoad({
+      req: { type: "get" },
+      ...extra,
+    });
+
+    if (error) {
+      return [state, error];
+    }
+
+    return [state, null]; // Возвращаем нефильтрованное состояние
   }
 
   /**
@@ -426,25 +483,23 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   ): Promise<[D["rpc"][N]["returns"], Error | null]> {
     console.log(`Calling procedure: ${String(name)} with args:`, args);
 
-    const [currentState, loadError] = await this.get(extra);
+    // Используем нефильтрованное состояние
+    const [currentState, loadError] = await this.loadRawState(extra);
     if (loadError) {
       throw new Error("Failed to load state");
     }
-
+    const oldState = { ...currentState };
     const procedure = this.procedures[name];
     if (!procedure) {
       throw new Error(`Procedure ${String(name)} not found`);
     }
 
-    const previousState = { ...currentState };
-
+    // Выполняем процедуру, передавая ссылку на состояние
     const result = await procedure(args, currentState);
-
-    const newState = currentState; // Предполагается, что процедура изменяет состояние напрямую
 
     console.log("Saving new state...");
     const unloadError = await this.stateUnload({
-      state: newState,
+      state: currentState, // сохраняем новое нефильтрованное состояние
       req: { type: "call", calls: [{ name, args }] },
       ...extra,
     });
@@ -455,15 +510,16 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     const cacheKey = this.getCacheKeyFromExtra(extra);
     if (this.cacheEnabled) {
-      await this.updateCache(cacheKey, newState);
+      await this.updateCache(cacheKey, currentState);
     }
 
+    // Применяем фильтры к измененному состоянию
     console.log("Applying filters...");
-    const filteredState = this.applyFilters(newState, extra);
+    const filteredState = this.applyFilters(currentState, extra);
 
+    // Применяем watchers к измененному состоянию
     console.log("Running watchers...");
-    const updatedFields = this.getUpdatedFields(previousState, newState);
-    await this.applyWatchers(updatedFields, newState, extra);
+    await this.applyWatchers(currentState, oldState, extra);
 
     return [result, null];
   }
@@ -522,27 +578,6 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
         error: error as Error,
       };
     }
-  }
-
-  /**
-   * Получает обновленные поля состояния
-   * @param previousState Предыдущее состояние
-   * @param newState Новое состояние
-   * @returns Патч с обновленными полями
-   */
-  private getUpdatedFields(
-    previousState: InferStateType<D>,
-    newState: InferStateType<D>,
-  ): ApiflyPatch<InferStateType<D>> {
-    const updatedFields: ApiflyPatch<InferStateType<D>> = {};
-
-    for (const key in newState) {
-      if (newState[key] !== previousState[key]) {
-        updatedFields[key] = newState[key];
-      }
-    }
-
-    return updatedFields;
   }
 
   /**
@@ -618,36 +653,46 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
   /**
    * Применяет watchers к обновленным полям
-   * @param updatedFields Обновленные поля
    * @param newState Новое состояние
+   * @param prevState Предыдущее состояние
    * @param extra Дополнительные данные
    */
   private async applyWatchers(
-    updatedFields: ApiflyPatch<InferStateType<D>>,
     newState: InferStateType<D>,
+    prevState: InferStateType<D>,
     extra: D["extra"],
   ): Promise<void> {
     console.log("Applying watchers...");
 
-    const traverse = async (obj: any, path: string = "") => {
-      for (const key in obj) {
+    const traverse = async (newObj: any, prevObj: any, path: string = "") => {
+      for (const key in newObj) {
         const fullPath = path ? `${path}.${key}` : key;
-        const watcher = this.getNestedValue(this.watchersList, fullPath);
-        if (typeof watcher === "function") {
-          console.log(`Running watcher for key: ${fullPath}`);
-          await watcher({
-            currentValue: newState[key],
-            newValue: obj[key],
-            state: newState,
-            ...extra,
-          });
-        } else if (typeof obj[key] === "object" && obj[key] !== null) {
-          await traverse(obj[key], fullPath);
+
+        const newValue = newObj[key];
+        const oldValue = prevObj[key];
+
+        // Проверяем, изменилось ли значение
+        if (newValue !== oldValue) {
+          const watcher = this.getNestedValue(this.watchersList, fullPath);
+          if (typeof watcher === "function") {
+            console.log(`Running watcher for key: ${fullPath}`);
+            await watcher({
+              currentValue: oldValue,
+              newValue: newValue,
+              state: newState,
+              ...extra,
+            });
+          }
+        }
+
+        // Если это объект, продолжаем рекурсивно сравнивать
+        if (typeof newValue === "object" && newValue !== null) {
+          await traverse(newValue, oldValue, fullPath);
         }
       }
     };
 
-    await traverse(updatedFields);
+    await traverse(newState, prevState);
   }
 
   /**

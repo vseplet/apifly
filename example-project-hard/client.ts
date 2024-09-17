@@ -69,7 +69,7 @@ async function main() {
   startTime = Date.now();
   const [value10, err10] = await client1.get();
   logTime(startTime, "Client1: Финального GET запрос завершен");
-  console.log("Client1: Финального состояние:", value1);
+  console.log("Client1: Финального состояние:", value10);
 }
 
 main();
