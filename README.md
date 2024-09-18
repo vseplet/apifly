@@ -71,8 +71,8 @@ export type MyApiflyDefinition = ApiflyDefinition<
 <p>Пример настройки сервера на базе фреймворка <strong>Hono</strong> и использования Apifly для управления состоянием:</p>
 
 ```ts
-import apifly from "https://raw.githubusercontent.com/vseplet/apifly/artpani/cache/source/mod.ts";
-import type { ApiflyDefinition } from "https://raw.githubusercontent.com/vseplet/apifly/blob/artpani/cache/source/types.ts";
+import apifly from "@vseplet/apifly";
+import type { ApiflyDefinition } from "@vseplet/apifly/types.ts";
 import { Hono } from "jsr:@hono/hono";
 
 type MyApiflyDefinition = ApiflyDefinition<
@@ -170,15 +170,44 @@ Deno.serve(server.fetch);
 ```
 
 <h3 id="3-создание-клиента">3. Создание клиента</h3>
+<p>Пример настройки клиента с указанием заголовков:</p>
 
 ```ts
 import apifly from "@vseplet/apifly";
 import type { MyApiflyDefinition } from "./MyApiflyDefinition.type.ts";
 
 export const client = new apifly.client<MyApiflyDefinition>({
-  baseURL: "адрес_сервера",
+  baseURL: "https://apiflyservertesting.deno.dev/api/apifly",
+  headers: {
+    "X-User-ID": "user10",
+  },
   limiter: { unlimited: true },
 });
+```
+
+<p>Пример использования клиента:</p>
+
+<h4>GET запрос:</h4>
+
+```ts
+const [state, error] = await client.get();
+console.log(state);
+```
+
+<h4>PATCH запрос:</h4>
+
+```ts
+const patchedState = await client.patch({
+  message: "Updated message!",
+});
+console.log(patchedState);
+```
+
+<h4>Вызов процедуры:</h4>
+
+```ts
+const [result, error] = await client.call("incrementCounter", [5]);
+console.log(result);
 ```
 
 <h2 id="пример-работы-с-кэшем">Пример работы с кэшем</h2>
