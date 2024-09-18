@@ -313,7 +313,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
     );
 
-    let state: InferStateType<D>;
+    let state: InferStateType<D> | null = null;
     let error: Error | null = null;
 
     if (this.cacheEnabled) {
@@ -324,33 +324,33 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
         const now = Date.now();
         if (now - cachedEntry.timestamp < this.cacheTTL) {
           console.log(`✅ Cache HIT for key: ${cacheKey}`);
-          state = cachedEntry.data;
+          return [cachedEntry.data, null]; // Возвращаем состояние из кэша и выходим
         } else {
           console.log(`⏰ Cache EXPIRED for key: ${cacheKey}`);
-          await cache.delete(cacheUrl);
+          await cache.delete(cacheUrl); // Удаляем истекший кэш
         }
       } else {
         console.log(`❌ Cache MISS for key: ${cacheKey}`);
       }
-    } else {
-      console.log("Caching is disabled; loading state from stateLoad.");
     }
 
+    // Если кэш не найден или истек, загружаем состояние
     [state, error] = await this.stateLoad({
       req: { type: "get" },
       ...extra,
     });
 
     if (error) {
-      return [state, error];
+      return [{} as InferStateType<D>, error];
     }
 
-    if (this.cacheEnabled) {
+    // Обновляем кэш с новым состоянием
+    if (this.cacheEnabled && state) {
       await this.updateCache(cacheKey, state);
     }
 
     console.log("Applying filters...");
-    const filteredState = this.applyFilters(state, extra);
+    const filteredState = this.applyFilters(state!, extra);
 
     return [filteredState, error];
   }
