@@ -223,3 +223,8 @@ export type GetValueByKey<
   : never
   : K extends keyof T ? T[K]
   : never;
+
+export type CacheEntry<T> = {
+  data: T;
+  timestamp: number;
+};

@@ -1,9 +1,13 @@
+// MyApiflyDefinition.type.ts
 import type { ApiflyDefinition } from "../source/types.ts";
 
 export type MyApiflyDefinition = ApiflyDefinition<
   {
     counter: number;
     message: string;
+    user: {
+      tg_id: string;
+    };
   },
   {
     incrementCounter: {
@@ -19,5 +23,7 @@ export type MyApiflyDefinition = ApiflyDefinition<
       returns: string;
     };
   },
-  {}
+  {
+    userId: string;
+  }
 >;

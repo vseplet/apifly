@@ -1,32 +1,59 @@
-// deno-lint-ignore-file no-unused-vars no-case-declarations
-import type {
-  ApiflyDefinition,
-  ApiflyRequest,
-  ApiflyResponse,
-  InferStateType,
-} from "$types";
+// ApiflyServer.ts
 
-import { type Context, Hono } from "@hono/hono";
-
+import type { ApiflyDefinition } from "$types";
+import { type Context, Hono } from "jsr:@hono/hono";
 import type { ApiflyManager } from "./ApiflyManager.ts";
 
 export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
-  constructor(private manager: ApiflyManager<D>) {}
+  private router: Hono;
 
-  hono(cb: (c: Context) => D["extra"]) {
-    const router = new Hono();
-    router.post(
-      "/apifly",
+  constructor(
+    private manager: ApiflyManager<D>,
+    private basePath: string = "/",
+    private headerMappings?: Record<keyof D["extra"], string>,
+  ) {
+    this.router = new Hono();
+
+    this.router.post(
+      this.basePath,
       async (c: Context) => {
-        console.log("Incoming request:", await c.req.json());
+        const requestData = await c.req.json();
+        console.log("Incoming request:", requestData);
+
+        const extra = this.extractExtraFromHeaders(c);
+
         const response = await this.manager.handleRequest(
-          await c.req.json(),
-          cb(c),
+          requestData,
+          extra,
         );
         console.log("Outgoing response:", response);
         return c.json(response);
       },
     );
-    return router;
+  }
+
+  /**
+   * Регистрирует маршруты на указанном сервере Hono
+   */
+  registerRoutes(server: Hono) {
+    server.route("/", this.router);
+  }
+
+  /**
+   * Извлекает extra данные из заголовков на основе соответствий
+   */
+  private extractExtraFromHeaders(c: Context): D["extra"] {
+    const extra: Partial<D["extra"]> = {};
+
+    if (this.headerMappings) {
+      for (const [field, headerName] of Object.entries(this.headerMappings)) {
+        const headerValue = c.req.header(headerName as string);
+        if (headerValue) {
+          (extra as any)[field] = headerValue;
+        }
+      }
+    }
+
+    return extra as D["extra"];
   }
 }
