@@ -7,10 +7,20 @@ import { filter, guard, loader, unloader, watcher } from "./helpers.ts";
 export { ApiflyClient, ApiflyServer };
 
 /**
- * Defines an Apifly definition
- * @param state The state type
- * @param rpc The RPC type
- * @returns The Apifly definition
+ * Определяет структуру Apifly.
+ *
+ * @template S - Тип состояния.
+ * @template R - Тип RPC, который включает в себя набор процедур с аргументами и возвращаемыми значениями.
+ *
+ * @param {S} state - Начальное состояние.
+ * @param {R} rpc - Определение процедур RPC с аргументами и возвращаемыми значениями.
+ * @returns {ApiflyDefinition<S, R>} - Возвращает объект, представляющий определение Apifly с состоянием, RPC и дополнительными параметрами.
+ *
+ * @example
+ * const definition = apiflyDefine(
+ *   { counter: 0, message: "" },
+ *   { increment: { args: [number], returns: void } }
+ * );
  */
 export const apiflyDefine = <
   S,

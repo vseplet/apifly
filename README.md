@@ -1,7 +1,7 @@
 <h1 align="center">Apifly</h1>
 
 <p align="center">
-  <img src="https://artpani.sirv.com/Images/projects/apifly/apifly.webp" alt="Apifly" style="width: 200px;"/>
+  <img src="https://artpani.sirv.com/Images/projects/apifly/apifly.webp?w=256" alt="Apifly" style="width: 200px;"/>
 </p>
 
 <p align="center">
