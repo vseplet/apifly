@@ -1,7 +1,7 @@
 // ApiflyServer.ts
 
 import type { ApiflyDefinition } from "$types";
-import { type Context, Hono } from "jsr:@hono/hono";
+import { type Context, Hono } from "@hono/hono";
 import type { ApiflyManager } from "./ApiflyManager.ts";
 
 export class ApiflyServer<D extends ApiflyDefinition<any, any>> {

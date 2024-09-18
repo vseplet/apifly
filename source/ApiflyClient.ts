@@ -8,9 +8,9 @@ import type {
   InferRpcListReturns,
   InferStateType,
 } from "$types";
-import fetchify from "jsr:@vseplet/fetchify";
-import type { Fetchify } from "jsr:/@vseplet/fetchify@0.3.20/Fetchify";
-import type { IFetchifyConfig } from "jsr:/@vseplet/fetchify@0.3.20/types";
+import fetchify from "@vseplet/fetchify";
+import type { Fetchify } from "@vseplet/fetchify/Fetchify";
+import type { IFetchifyConfig } from "@vseplet/fetchify/types";
 
 export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
   private fetchify: Fetchify;
