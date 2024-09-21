@@ -6,7 +6,7 @@ export type ApiflyGuard<TExtra, TValue, TStatePart> = (
     newValue: TValue;
     state: TStatePart;
   } & TExtra,
-) => boolean;
+) => boolean | Promise<boolean>;
 
 // type RecursiveGuards<TExtra, TState, TStatePart = TState> = {
 //   [K in keyof TState]?: TState[K] extends object
@@ -34,7 +34,7 @@ export type ApiflyFilter<TExtra, TValue, TStatePart> = (
     currentValue: TValue;
     state: TStatePart;
   } & TExtra,
-) => boolean;
+) => boolean | Promise<boolean>;
 
 type RecursiveFilters<TExtra, TState, TStatePart = TState> = {
   [K in keyof TState]?: TState[K] extends object
@@ -55,7 +55,7 @@ export type ApiflyWatcher<TExtra, TValue, TStatePart> = (
     newValue: TValue;
     state: TStatePart;
   } & TExtra,
-) => Promise<void>;
+) => void | Promise<void>;
 
 type RecursiveWatchers<TExtra, TState, TStatePart = TState> = {
   [K in keyof TState]?: TState[K] extends object
