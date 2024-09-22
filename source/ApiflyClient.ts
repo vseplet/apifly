@@ -94,7 +94,7 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
   async call<N extends keyof D["rpc"]>(
     name: N,
     args: InferRpcListArgs<D["rpc"]>[N],
-  ): Promise<InferRpcListReturns<D["rpc"]>[N]> {
+  ): Promise<InferRpcListReturns<D["rpc"]>[N] | { error: string }> {
     console.log(
       `Sending CALL request for procedure ${String(name)} with args:`,
       args,
@@ -110,7 +110,7 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
         `Received CALL response for procedure ${String(name)}:`,
         result,
       );
-      if (result.error) return result.error;
+      if (result.error) return { error: result.error };
       return result.returns[name];
     } catch (error) {
       console.error(
