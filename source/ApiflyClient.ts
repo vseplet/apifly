@@ -110,6 +110,7 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
         `Received CALL response for procedure ${String(name)}:`,
         result,
       );
+      if (result.error) return result.error;
       return result.returns[name];
     } catch (error) {
       console.error(
