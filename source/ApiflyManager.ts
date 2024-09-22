@@ -560,6 +560,13 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
             call.args,
             extra,
           );
+          if (error) {
+            return {
+              state: {},
+              error,
+              returns: { [call.name]: result },
+            };
+          }
 
           const [state, stateError] = await this.get(extra);
 
