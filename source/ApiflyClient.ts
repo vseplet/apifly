@@ -95,10 +95,10 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
     name: N,
     args: InferRpcListArgs<D["rpc"]>[N],
   ): Promise<InferRpcListReturns<D["rpc"]>[N] & { error: string | undefined }> {
-    console.log(
-      `Sending CALL request for procedure ${String(name)} with args:`,
-      args,
-    );
+    // console.log(
+    //   `Sending CALL request for procedure ${String(name)} with args:`,
+    //   args,
+    // );
     try {
       const response = await this.sendRequest({
         type: "call",
@@ -106,10 +106,10 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
       });
 
       const result = await response.json();
-      console.log(
-        `Received CALL response for procedure ${String(name)}:`,
-        result,
-      );
+      // console.log(
+      //   `Received CALL response for procedure ${String(name)}:`,
+      //   result,
+      // );
       return { ...result.returns[name], error: result.error };
     } catch (error) {
       console.error(
