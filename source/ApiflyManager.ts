@@ -324,6 +324,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
         const now = Date.now();
         if (now - cachedEntry.timestamp < this.cacheTTL) {
           console.log(`✅ Cache HIT for key: ${cacheKey}`);
+          //TODO А ФИЛЬТРЫ НЕ ПРИМЕНИЛИ!!!!
           return [cachedEntry.data, null]; // Возвращаем состояние из кэша и выходим
         } else {
           console.log(`⏰ Cache EXPIRED for key: ${cacheKey}`);
@@ -486,7 +487,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     // Используем нефильтрованное состояние
     const [currentState, loadError] = await this.loadRawState(extra);
     if (loadError) {
-      throw new Error("Failed to load state");
+      return [{}, loadError];
     }
     const oldState = { ...currentState };
     const procedure = this.procedures[name];
@@ -513,9 +514,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       await this.updateCache(cacheKey, currentState);
     }
 
-    // Применяем фильтры к измененному состоянию
-    console.log("Applying filters...");
-    const filteredState = this.applyFilters(currentState, extra);
+    // // Применяем фильтры к измененному состоянию
+    // console.log("Applying filters...");
+    // const filteredState = this.applyFilters(currentState, extra);
 
     // Применяем watchers к измененному состоянию
     console.log("Running watchers...");
