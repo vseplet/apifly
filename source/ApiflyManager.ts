@@ -563,7 +563,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
           if (error) {
             return {
               state: {},
-              error,
+              error: error.message,
               returns: { [call.name]: result },
             };
           }
@@ -572,7 +572,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
           return {
             state: state ?? {},
-            error: error || stateError,
+            error: stateError ? stateError.message : "",
             returns: { [call.name]: result },
           };
         }
