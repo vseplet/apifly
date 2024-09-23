@@ -1,7 +1,7 @@
 {
   "lock": false,
   "name": "@vseplet/apifly",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "license": "MIT",
   "workflows": {
     "UpdateSemverDeployJsr": {
