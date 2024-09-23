@@ -494,12 +494,12 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       extra,
     );
     if (!canProceed) {
-      throw new Error("Guard check failed:", guardError!);
+      return [{}, new Error("Guard check failed:", guardError!)];
     }
     const oldState = { ...currentState };
     const procedure = this.procedures[name];
     if (!procedure) {
-      throw new Error(`Procedure ${String(name)} not found`);
+      return [{}, new Error(`Procedure ${String(name)} not found`)];
     }
 
     // Выполняем процедуру, передавая ссылку на состояние
@@ -617,9 +617,6 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
           state: currentState,
           ...extra,
         });
-        console.log(
-          `Inside applyGuards: key=${key}, canProceed : ${canProceed}`,
-        );
 
         if (!canProceed) {
           console.error(`Guard failed for key: ${key}`);
