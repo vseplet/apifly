@@ -375,7 +375,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     }
     const oldState = { ...currentState };
     console.log("Applying guards...");
-    const [canProceed, guardError] = this.applyGuards(
+    const [canProceed, guardError] = await this.applyGuards(
       patch,
       currentState,
       extra,
@@ -488,7 +488,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     if (loadError) {
       return [{}, loadError];
     }
-    const [canProceed, guardError] = this.applyGuards(
+    const [canProceed, guardError] = await this.applyGuards(
       currentState,
       currentState,
       extra,
@@ -602,16 +602,16 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
    * @param extra Дополнительные данные
    * @returns Кортеж [можно ли продолжить, ошибка]
    */
-  private applyGuards(
+  private async applyGuards(
     patch: ApiflyPatch<InferStateType<D>>,
     currentState: InferStateType<D>,
     extra?: D["extra"],
-  ): [boolean, Error | null] {
+  ): Promise<[boolean, Error | null]> {
     console.log("Checking guards...");
     for (const key in patch) {
       const guard = this.getNestedValue(this.guardsList, key);
       if (typeof guard === "function") {
-        const canProceed = guard({
+        const canProceed = await guard({
           currentValue: currentState[key],
           newValue: patch[key],
           state: currentState,
