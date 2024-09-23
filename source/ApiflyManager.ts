@@ -617,6 +617,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
           state: currentState,
           ...extra,
         });
+        console.log(
+          `Inside applyGuards: key=${key}, canProceed : ${canProceed}`,
+        );
 
         if (!canProceed) {
           console.error(`Guard failed for key: ${key}`);
