@@ -489,7 +489,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return [{}, loadError];
     }
     const [canProceed, guardError] = this.applyGuards(
-      {},
+      currentState,
       currentState,
       extra,
     );
