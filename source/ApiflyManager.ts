@@ -494,7 +494,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       extra,
     );
     if (!canProceed) {
-      return [{}, new Error("Guard check failed:", guardError!)];
+      return [{}, new Error(`Guard check failed: ${guardError?.message}`)];
     }
     const oldState = { ...currentState };
     const procedure = this.procedures[name];
