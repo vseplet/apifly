@@ -47,7 +47,6 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
   async get(): Promise<
     [ApiflyResponse<InferStateType<D>> | null, Error | null]
   > {
-    console.log("Sending GET request");
     try {
       const response = await this.sendRequest({ type: "get" });
 
@@ -69,7 +68,7 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
   async patch(
     patch: ApiflyPatch<InferStateType<D>>,
   ): Promise<ApiflyResponse<InferStateType<D>>> {
-    console.log("Sending PATCH request with patch:", patch);
+    // console.log("Sending PATCH request with patch:", patch);
     try {
       const response = await this.sendRequest({
         type: "patch",
