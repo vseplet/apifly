@@ -430,15 +430,14 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   ): Promise<[InferStateType<D>, Error | null]> {
     console.log("Fetching raw state...");
 
-    const cacheKey = this.getCacheKeyFromExtra(extra);
-    const cacheUrl = new URL(
-      `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
-    );
-
     let state: InferStateType<D>;
     let error: Error | null = null;
 
     if (this.cacheEnabled) {
+      const cacheKey = this.getCacheKeyFromExtra(extra);
+      const cacheUrl = new URL(
+        `https://cache.example.com/${encodeURIComponent(cacheKey)}`,
+      );
       const cachedResponse = await cache.match(cacheUrl);
       if (cachedResponse) {
         const cachedEntry: CacheEntry<InferStateType<D>> = await cachedResponse
