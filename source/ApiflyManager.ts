@@ -488,6 +488,14 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     if (loadError) {
       return [{}, loadError];
     }
+    const [canProceed, guardError] = this.applyGuards(
+      {},
+      currentState,
+      extra,
+    );
+    if (!canProceed) {
+      throw new Error("Guard check failed:", guardError!);
+    }
     const oldState = { ...currentState };
     const procedure = this.procedures[name];
     if (!procedure) {
