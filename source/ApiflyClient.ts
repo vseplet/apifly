@@ -52,7 +52,7 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
       const response = await this.sendRequest({ type: "get" });
 
       const result = await response.json();
-      console.log("Received GET response:", result);
+      // console.log("Received GET response:", result);
       return [result, null];
     } catch (error) {
       console.error("GET request error:", error);
@@ -76,7 +76,7 @@ export class ApiflyClient<D extends ApiflyDefinition<any, any>> {
         patch,
       });
       const result = await response.json();
-      console.log("Received PATCH response:", result);
+      // console.log("Received PATCH response:", result);
       return result;
     } catch (error) {
       console.error("PATCH request error:", error);
