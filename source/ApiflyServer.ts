@@ -33,7 +33,7 @@ export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
   }
 
   /**
-   * Регистрирует маршруты на указанном сервере Hono
+   * Регистрирует маршруты на указанном сервере Hono.
    */
   registerRoutes(server: Hono) {
     server.route("/", this.router);
