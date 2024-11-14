@@ -18,7 +18,7 @@ export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
       this.basePath,
       async (c: Context) => {
         const requestData = await c.req.json();
-        console.log("Incoming request:", requestData);
+        // console.log("Incoming request:", requestData);
 
         const extra = this.extractExtraFromHeaders(c);
 
@@ -26,7 +26,7 @@ export class ApiflyServer<D extends ApiflyDefinition<any, any>> {
           requestData,
           extra,
         );
-        console.log("Outgoing response:", response);
+        // console.log("Outgoing response:", response);
         return c.json(response);
       },
     );

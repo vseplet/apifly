@@ -80,7 +80,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   guards(
     guards: ApiflyGuards<D["extra"], InferStateType<D>>,
   ): ApiflyManager<D> {
-    console.log("Adding guards:", guards);
+    // console.log("Adding guards:", guards);
     this.guardsList = guards;
     return this;
   }
@@ -93,7 +93,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   watchers(
     watchers: ApiflyWatchers<D["extra"], InferStateType<D>>,
   ): ApiflyManager<D> {
-    console.log("Adding watchers:", watchers);
+    // console.log("Adding watchers:", watchers);
     this.watchersList = watchers;
     return this;
   }
@@ -106,7 +106,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   filters(
     filters: ApiflyFilters<D["extra"], InferStateType<D>>,
   ): ApiflyManager<D> {
-    console.log("Adding filters:", filters);
+    // console.log("Adding filters:", filters);
     this.filtersList = filters;
     return this;
   }
@@ -153,7 +153,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       InferStateType<D>
     >,
   ) {
-    console.log(`Adding guard for key: ${String(key)}`);
+    // console.log(`Adding guard for key: ${String(key)}`);
     const keyParts = key.toString().split(".");
     let target = this.guardsList as any;
 
@@ -182,7 +182,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       InferStateType<D>
     >,
   ) {
-    console.log(`Adding watcher for key: ${String(key)}`);
+    // console.log(`Adding watcher for key: ${String(key)}`);
     const keyParts = key.toString().split(".");
     let target = this.watchersList as any;
 
@@ -211,7 +211,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       InferStateType<D>
     >,
   ) {
-    console.log(`Adding filter for key: ${String(key)}`);
+    // console.log(`Adding filter for key: ${String(key)}`);
     const keyParts = key.toString().split(".");
     let target = this.filtersList as any;
 
@@ -240,7 +240,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       state: InferStateType<D>,
     ) => Promise<D["rpc"][N]["returns"]>, // Возвращаем и стейт, и результат
   ): ApiflyManager<D> {
-    console.log(`Adding procedure: ${String(name)}`);
+    // console.log(`Adding procedure: ${String(name)}`);
     this.procedures[name] = async (args: any, state: InferStateType<D>) => {
       return await handler(args, state); // Возвращаем [новый стейт, результат]
     };
@@ -257,7 +257,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       args: { req: ApiflyRequest<InferStateType<D>> } & D["extra"],
     ) => Promise<[InferStateType<D>, Error | null]>,
   ): ApiflyManager<D> {
-    console.log("Loading state...");
+    // console.log("Loading state...");
     this.stateLoad = cb;
     return this;
   }
@@ -275,7 +275,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       } & D["extra"],
     ) => Promise<Error | null>,
   ): ApiflyManager<D> {
-    console.log("Unloading state...");
+    // console.log("Unloading state...");
     this.stateUnload = cb;
     return this;
   }
@@ -366,7 +366,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
     patch: ApiflyPatch<InferStateType<D>>,
     extra: D["extra"],
   ): Promise<ApiflyResponse<InferStateType<D>>> {
-    console.log("Applying patch:", patch);
+    // console.log("Applying patch:", patch);
 
     const [currentState, loadError] = await this.loadRawState(extra);
     if (loadError) {
@@ -374,7 +374,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return { state: {}, error: loadError };
     }
     const oldState = { ...currentState };
-    console.log("Applying guards...");
+    // console.log("Applying guards...");
     const [canProceed, guardError] = await this.applyGuards(
       patch,
       currentState,
@@ -387,7 +387,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
 
     const newState = { ...currentState, ...patch };
 
-    console.log("Saving new state...");
+    // console.log("Saving new state...");
     const unloadError = await this.stateUnload({
       state: newState,
       req: { type: "patch", patch },
@@ -403,10 +403,10 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       await this.updateCache(cacheKey, newState);
     }
 
-    console.log("Applying filters...");
+    // console.log("Applying filters...");
     const filteredState = this.applyFilters(newState, extra);
 
-    console.log("Running watchers...");
+    // console.log("Running watchers...");
     await this.applyWatchers(newState, oldState, extra);
 
     return { state: filteredState, error: null };
@@ -428,7 +428,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
   private async loadRawState(
     extra: D["extra"],
   ): Promise<[InferStateType<D>, Error | null]> {
-    console.log("Fetching raw state...");
+    // console.log("Fetching raw state...");
 
     let state: InferStateType<D>;
     let error: Error | null = null;
@@ -502,7 +502,7 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return [{}, new Error(`Procedure ${String(name)} not found`)];
     }
 
-    // Выполняем процедуру, передавая ссылку на состояние
+
     const result = await procedure(args, currentState);
 
     console.log("Saving new state...");
@@ -516,8 +516,9 @@ export class ApiflyManager<D extends ApiflyDefinition<any, any>> {
       return [result, unloadError];
     }
 
-    const cacheKey = this.getCacheKeyFromExtra(extra);
+
     if (this.cacheEnabled) {
+      const cacheKey = this.getCacheKeyFromExtra(extra);
       await this.updateCache(cacheKey, currentState);
     }
 
